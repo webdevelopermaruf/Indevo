@@ -14,6 +14,7 @@ dist-ssr
 coverage
 *.local
 
+.qodo
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
