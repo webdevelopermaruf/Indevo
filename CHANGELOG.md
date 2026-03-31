@@ -11,5 +11,7 @@
 ### Fixed
 
 ### Changed
+- implemented the check-email if the user is already registered then it will redirect to registration page to login page
+- if the user is not registered on the system then it will take to next step.
 
 ### Removed
