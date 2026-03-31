@@ -3,9 +3,9 @@ import { RouterView } from "vue-router";
 </script>
 
 <template>
-  Hello
   <RouterView/>
 </template>
 
 <style>
+*{margin: 0; padding: 0; box-sizing: border-box;}
 </style>
