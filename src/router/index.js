@@ -1,26 +1,30 @@
-import { createWebHistory, createRouter } from 'vue-router'
-import Login from "@/views/auth/Login.vue";
-import Onboarding from "@/views/auth/Onboarding.vue";
-import Registration from "@/views/auth/Registration.vue";
-import {useAuthStore} from "@/stores/auth.store.js";
-
+import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
-    { path: '/onboarding', component: Onboarding },
-    { path: '/register', component: Registration },
-    { path: '/login', component: Login},
+    {
+        path: '/',
+        redirect: '/onboarding'
+    },
+    {
+        path: '/onboarding',
+        name: 'Onboarding',
+        component: () => import('@/views/auth/Onboarding.vue')
+    },
+    {
+        path: '/login',
+        name: 'Login',
+        component: () => import('@/views/auth/Login.vue')
+    },
+    {
+        path: '/register',
+        name: 'Register',
+        component: () => import('@/views/auth/Registration.vue')
+    },
 ]
 
-export const router = createRouter({
+const router = createRouter({
     history: createWebHistory(),
-    routes,
+    routes
 })
 
-
-router.beforeEach((to, from) => {
-    const auth = useAuthStore()
-    if (to.meta.requiresAuth && !auth.isAuthenticated) {
-        return '/login'
-    }
-    return true
-})
+export default router

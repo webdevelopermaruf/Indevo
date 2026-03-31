@@ -6,6 +6,7 @@
 - Basic services like auth service, api service added. 
 - A basic auth store added for testing purpose. 
 - A few View files added for testing purpose. 
+- 4 pages of Onboarding page added
 
 ### Fixed
 

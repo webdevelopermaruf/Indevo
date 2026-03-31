@@ -1,0 +1,230 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #e8ede8 !important;
+    color: #1a1a1a !important;
+    min-height: 100vh;
+}
+
+:root {
+    --indevo-green: #2e7d32;
+    --indevo-green-mid: #388e3c;
+    --indevo-green-light: #66bb6a;
+    --indevo-bg: #e8ede8;
+    --indevo-card-bg: #f5f6f3;
+    --indevo-border: #e0e3db;
+    --indevo-text: #1a1a1a;
+    --indevo-text-muted: #6b7280;
+    --indevo-radius: 12px;
+    --indevo-input-radius: 10px;
+}
+
+.auth-layout {
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--indevo-bg);
+    font-family: 'Nunito', 'Segoe UI', sans-serif;
+}
+
+.auth-card {
+    min-height: 100vh;
+    background: var(--indevo-card-bg);
+    padding: 2.5rem 2rem;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    position: relative;
+}
+
+.logo-section {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+}
+
+.logo {
+    height: 80px;
+    object-fit: contain;
+}
+
+.auth-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--indevo-text);
+    text-align: center;
+    margin: 0 0 0.35rem;
+}
+
+.auth-subtitle {
+    font-size: 0.9rem;
+    color: var(--indevo-text-muted);
+    text-align: center;
+    margin: 0 0 1.5rem;
+}
+
+.field {
+    margin-bottom: 1rem;
+}
+
+:deep(.p-inputtext) {
+    border-radius: var(--indevo-input-radius) !important;
+    border: 1.5px solid var(--indevo-border) !important;
+    background: #fff !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.95rem;
+    color: var(--indevo-text);
+    width: 100%;
+    transition: border-color 0.2s;
+}
+
+:deep(.p-inputtext:focus) {
+    border-color: var(--indevo-green) !important;
+    box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.12) !important;
+}
+
+:deep(.p-password) {
+    width: 100%;
+}
+
+:deep(.p-password-input) {
+    width: 100%;
+}
+
+:deep(.p-select) {
+    border-radius: var(--indevo-input-radius) !important;
+    border: 1.5px solid var(--indevo-border) !important;
+    background: #fff !important;
+    width: 100%;
+}
+
+.btn-primary {
+    background: linear-gradient(0deg, #4EA844 0%, #439940 47.6%, #013119 100%) !important;
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    color: #fff !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 500 !important;
+    font-size: 14px !important;
+    padding: 0.8rem 1rem !important;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 0.25rem;
+}
+
+.btn-primary:hover:not(:disabled) {
+    opacity: 0.92;
+}
+
+.btn-social {
+    background: #fff !important;
+    border: 1.5px solid var(--indevo-border) !important;
+    border-radius: var(--indevo-radius) !important;
+    color: var(--indevo-text) !important;
+    font-weight: 500 !important;
+    font-size: 0.95rem !important;
+    padding: 0.7rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.6rem !important;
+    cursor: pointer;
+    width: 100%;
+}
+
+.btn-social:hover {
+    background: #f9fafb !important;
+}
+
+.social-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.social-icon-apple {
+    font-size: 1.2rem;
+    color: #000;
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1.25rem 0;
+    color: var(--indevo-text-muted);
+    font-size: 0.85rem;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--indevo-border);
+}
+
+.link-green {
+    color: var(--indevo-green);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.link-green:hover {
+    text-decoration: underline;
+}
+
+.signin-link {
+    text-align: center;
+    font-size: 0.88rem;
+    color: var(--indevo-text-muted);
+    margin: 1rem 0 0;
+}
+
+.terms-text {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--indevo-text-muted);
+    margin: 0.75rem 0 0;
+    line-height: 1.5;
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--indevo-text);
+    font-size: 1.25rem;
+    padding: 0;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.back-btn:hover {
+    color: var(--indevo-green);
+}
+
+.p-error {
+    font-size: 0.78rem;
+    color: #ef4444;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.w-full {
+    width: 100% !important;
+}
+
+.mb-3 {
+    margin-bottom: 0.75rem;
+}
+
+.mb-4 {
+    margin-bottom: 1rem;
+}

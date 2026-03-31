@@ -3,7 +3,7 @@ import axios from 'axios'
 import { useAuthStore } from '@/stores/auth.store'
 
 const api = axios.create({
-    baseURL: 'http://localhost:8000/api/v1',
+    baseURL: 'https://indevo-api.hostingersite.com/api/v1',
     withCredentials: true // cookie acceptor
 })
 
