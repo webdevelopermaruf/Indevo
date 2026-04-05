@@ -7,6 +7,7 @@ import App from './App.vue'
 
 import 'primeicons/primeicons.css'
 import './assets/auth.css'
+import './assets/global.css'
 
 const app = createApp(App)
 

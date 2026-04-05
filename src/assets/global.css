@@ -1,0 +1,42 @@
+body.dark {
+    background: #1a1a1a;
+    color: #e5e7eb;
+}
+
+body.dark .dashboard,
+body.dark .skills-page,
+body.dark .goals-page,
+body.dark .expenses-page,
+body.dark .reminders-page,
+body.dark .settings-page,
+body.dark .add-expense-page,
+body.dark .detail-page,
+body.dark .main-layout {
+    background: #1a1a1a;
+}
+
+body.dark .page-header,
+body.dark .bottom-nav {
+    background: #2a2a2a;
+    border-color: #333;
+}
+
+body.dark .card,
+body.dark .skill-card,
+body.dark .goal-card,
+body.dark .reminder-card,
+body.dark .budget-card,
+body.dark .recent-card,
+body.dark .balance-card {
+    background: #2a2a2a;
+}
+
+body.dark .page-title,
+body.dark .section-title,
+body.dark .user-name,
+body.dark .skill-name,
+body.dark .goal-name,
+body.dark .reminder-name,
+body.dark .expense-name {
+    color: #e5e7eb;
+}

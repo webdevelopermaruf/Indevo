@@ -6,7 +6,15 @@
 - Basic services like auth service, api service added. 
 - A basic auth store added for testing purpose. 
 - A few View files added for testing purpose. 
-- 4 pages of Onboarding page added
+- 4 pages of Onboarding page added.
+- Dashboard page added.
+- Expenses page added.
+- AddExpenses page added.
+- Notifications(Reminders) page added.
+- Goals page added
+- Skills page added
+- SkillDetail page added
+- SkillMastered page added
 
 ### Fixed
 
