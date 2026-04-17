@@ -211,7 +211,7 @@
 
       <!-- ── Logo Footer ────────────────────────────────────── -->
       <div class="brand-footer">
-        <img src="@/assets/indevo-logo.png" alt="InDevo" class="brand-logo" />
+        <img src="../../assets/indevo-logo.png" alt="InDevo" class="brand-logo" />
       </div>
 
     </div>
@@ -297,7 +297,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useThemeStore } from '@/stores/theme.store'
+import { useThemeStore } from '@/stores/theme.store.js'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()

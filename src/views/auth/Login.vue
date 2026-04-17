@@ -1,3 +1,21 @@
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth.store'
+import InputText from 'primevue/inputtext'
+import Password from 'primevue/password'
+import Button from 'primevue/button'
+
+const router = useRouter()
+const authStore = useAuthStore()
+
+async function handleLogin() {
+  await authStore.login()
+  if (!authStore.error) {
+
+  }
+}
+</script>
 <template>
   <div class="auth-layout">
     <div class="auth-card">
@@ -8,14 +26,13 @@
 
       <h2 class="auth-title">Welcome Back</h2>
       <p class="auth-subtitle">Enter your email to sign in for this app</p>
-
       <div v-if="authStore.error" style="color: red; text-align: center; margin-bottom: 1rem;">
         {{ authStore.error }}
       </div>
-
       <div class="field">
+
         <InputText
-            v-model="email"
+            v-model="authStore.LoginData.email"
             placeholder="Email or username"
             type="email"
             class="w-full"
@@ -24,7 +41,7 @@
 
       <div class="field">
         <Password
-            v-model="password"
+            v-model="authStore.LoginData.password"
             placeholder="Password"
             :feedback="false"
             toggleMask
@@ -63,27 +80,6 @@
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth.store'
-import InputText from 'primevue/inputtext'
-import Password from 'primevue/password'
-import Button from 'primevue/button'
-
-const router = useRouter()
-const authStore = useAuthStore()
-
-const email = ref('')
-const password = ref('')
-
-async function handleLogin() {
-  await authStore.login(email.value, password.value)
-  if (!authStore.error) {
-    router.push('/dashboard')
-  }
-}
-</script>
 
 <style scoped>
 @import '@/assets/auth.css';

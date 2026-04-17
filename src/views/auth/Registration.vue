@@ -31,8 +31,10 @@
               email: authStore.registerData.email
             });
             if(response.data.success === true){
-            // Todo: redirect to login page because user is already registered
-              router.push('/login')
+            // Todo: redirect to login page because user is already registered]
+              router.push('/login');
+              authStore.LoginData.email = authStore.registerData.email;
+
             }else{
               // Todo: let user go to next tab
               currentStep = 2;
@@ -220,7 +222,7 @@ const currencies = [
 async function handleRegister() {
   await authStore.register()
   if (!authStore.error) {
-    router.push('/dashboard')
+
   }
 }
 

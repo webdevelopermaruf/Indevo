@@ -1,85 +1,129 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth.store.js'
 
 const routes = [
-    {
-        path: '/',
-        redirect: '/onboarding'
-    },
+    // ── Auth Routes (Guest only) ─────────────────────
     {
         path: '/onboarding',
         name: 'Onboarding',
-        component: () => import('@/views/auth/Onboarding.vue')
+        component: () => import('@/views/auth/Onboarding.vue'),
+        meta: { requiresGuest: true }
     },
     {
         path: '/login',
         name: 'Login',
-        component: () => import('@/views/auth/Login.vue')
+        component: () => import('@/views/auth/Login.vue'),
+        meta: { requiresGuest: true }
     },
     {
         path: '/register',
         name: 'Register',
-        component: () => import('@/views/auth/Registration.vue')
+        component: () => import('@/views/auth/Registration.vue'),
+        meta: { requiresGuest: true }
+    },
+    {
+        path: '/verify',
+        name: 'Verify',
+        component: () => import('@/views/auth/Verify.vue'),
+        meta: { requiresGuest: true }
     },
 
-    // ── Main App (with bottom nav layout) ─────────────────────
-    // Uses a non-matching base path so it doesn't conflict with '/'
+    // ── Main App Routes (with Bottom Nav Layout) ─────────────────────
     {
-        path: '/:pathMatch(dashboard|expenses|notifications|goals|skills|settings)(.*)*',
+        path: '/',
         component: () => import('@/layouts/MainLayout.vue'),
         children: [
             {
-                path: '/dashboard',
+                path: '',
                 name: 'Dashboard',
                 component: () => import('@/views/Dashboard.vue'),
+                meta: { requiresAuth: true }
             },
             {
-                path: '/expenses',
+                path: 'expenses',
                 name: 'Expenses',
-                component: () => import('@/views/Expenses.vue')
+                component: () => import('@/views/Expense/Expenses.vue'),
+                meta: { requiresAuth: true }
             },
             {
-                path: '/expenses/add',
+                path: 'expenses/add',
                 name: 'AddExpense',
-                component: () => import('@/views/AddExpense.vue')
+                component: () => import('@/views/Expense/AddExpense.vue'),
+                meta: { requiresAuth: true }
             },
             {
-                path: '/notifications',
+                path: 'notifications',
                 name: 'Notifications',
-                component: () => import('@/views/Notifications.vue')
+                component: () => import('@/views/User/Notifications.vue'),
+                meta: { requiresAuth: true }
             },
             {
-                path: '/goals',
+                path: 'goals',
                 name: 'Goals',
-                component: () => import('@/views/Goals.vue')
+                component: () => import('@/views/Goal/Goals.vue'),
+                meta: { requiresAuth: true }
             },
             {
-                path: '/skills',
+                path: 'skills',
                 name: 'Skills',
-                component: () => import('@/views/Skills.vue')
+                component: () => import('@/views/Skill/Skills.vue'),
+                meta: { requiresAuth: true }
             },
             {
-                path: '/skills/:id',
+                path: 'skills/:id',
                 name: 'SkillDetail',
-                component: () => import('@/views/SkillDetail.vue')
+                component: () => import('@/views/Skill/SkillDetail.vue'),
+                meta: { requiresAuth: true }
             },
             {
-                path: '/skills/:id/mastered',
+                path: 'skills/:id/mastered',
                 name: 'SkillMastered',
-                component: () => import('@/views/SkillMastered.vue')
+                component: () => import('@/views/Skill/SkillMastered.vue'),
+                meta: { requiresAuth: true }
             },
             {
-                path: '/settings',
+                path: 'settings',
                 name: 'Settings',
-                component: () => import('@/views/Settings.vue')
-            }
+                component: () => import('@/views/User/Settings.vue'),
+                meta: { requiresAuth: true }
+            },
+
+            // Optional: Not Found inside the main layout
+            // {
+            //     path: ':pathMatch(.*)*',
+            //     name: 'NotFound',
+            //     component: () => import('@/views/NotFound.vue'),
+            //     meta: { requiresAuth: true }
+            // }
         ]
     }
 ]
 
-
 const router = createRouter({
     history: createWebHistory(),
     routes
+})
+
+router.beforeEach(async (to, from, next) => {
+    const auth = useAuthStore()
+
+    // Only call initAuth on first load, not after explicit login/logout
+    if (!auth.initialized) {
+        await auth.initAuth()
+    }
+
+    // console.log(auth.accessToken)
+
+    const isAuthenticated = !!auth.accessToken
+    if (to.meta.requiresAuth && !isAuthenticated) {
+        return next({ name: 'Login' })
+    }
+
+    if (to.meta.requiresGuest && isAuthenticated) {
+        return next({ name: 'Dashboard' })
+    }
+
+    next()
 })
 
 export default router

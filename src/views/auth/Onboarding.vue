@@ -165,7 +165,15 @@ function updateWidth() {
   slideWidth.value = containerRef.value?.offsetWidth || window.innerWidth
 }
 
+const checkOnBoard  = () => {
+  const state = localStorage.getItem('onboarding')
+  if (state == 1) {
+    router.push('/');
+  }
+}
+
 onMounted(() => {
+  checkOnBoard();
   updateWidth()
   window.addEventListener('resize', updateWidth)
 })
@@ -205,6 +213,7 @@ function handleBtn() {
   if (currentSlide.value < 3) {
     currentSlide.value++
   } else {
+    localStorage.setItem('onboarding', JSON.stringify(1))
     router.push('/login')
   }
 }
