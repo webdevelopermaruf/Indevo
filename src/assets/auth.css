@@ -1,19 +1,8 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    background-color: #e8ede8 !important;
-    color: #1a1a1a !important;
-    min-height: 100vh;
-}
-
 :root {
-    --indevo-green: #2e7d32;
-    --indevo-green-mid: #388e3c;
-    --indevo-green-light: #66bb6a;
+    --indevo-green: #013119;
+    --indevo-green-mid: #439940;
+    --indevo-green-light: #4EA844;
+    --indevo-green-gradiant: linear-gradient(0deg, var(--indevo-green-light) 0%, var(--indevo-green-mid) 47.6%, var(--indevo-green) 100%) !important;
     --indevo-bg: #e8ede8;
     --indevo-card-bg: #f5f6f3;
     --indevo-border: #e0e3db;
@@ -21,6 +10,26 @@ body {
     --indevo-text-muted: #6b7280;
     --indevo-radius: 12px;
     --indevo-input-radius: 10px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--indevo-bg) !important;
+    color: #1a1a1a !important;
+    min-height: 100vh;
+}
+
+.page-header {
+    background: #f0f2ee;
+    padding: 1.25rem 1.25rem 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .auth-layout {
@@ -104,7 +113,7 @@ body {
 }
 
 .btn-primary {
-    background: linear-gradient(0deg, #4EA844 0%, #439940 47.6%, #013119 100%) !important;
+    background: linear-gradient(0deg, var(--indevo-green-light) 0%, var(--indevo-green-mid) 47.6%, var(--indevo-green) 100%) !important;
     box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25) !important;
     border: none !important;
     border-radius: 8px !important;

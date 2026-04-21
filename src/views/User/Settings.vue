@@ -1,9 +1,79 @@
+<script setup>
+import {ref, computed, onMounted} from 'vue'
+import { useThemeStore } from '@/stores/theme.store.js'
+import {useAuthStore} from "@/stores/auth.store.js";
+
+const themeStore = useThemeStore()
+
+const auth = useAuthStore()
+const avatarInput = ref(null)
+function triggerAvatarUpload() { avatarInput.value?.click() }
+
+const prefs = ref({ currency: 'GBP',  })
+const isCurrencyOpen = ref(false)
+
+const currencies = [
+  { code: 'GBP', symbol: '£', name: 'British Pound' },
+  { code: 'USD', symbol: '$', name: 'US Dollar' },
+  { code: 'EUR', symbol: '€', name: 'Euro' },
+  { code: 'NGN', symbol: '₦', name: 'Nigerian Naira' },
+  { code: 'INR', symbol: '₹', name: 'Indian Rupee' }
+]
+function selectCurrency(code) {
+  prefs.value.currency = code
+  isCurrencyOpen.value = false
+}
+function currentCurrency() {
+  return currencies.find(c => c.code === prefs.value.currency)
+}
+
+
+const darkMode = computed({ get: () => themeStore.darkMode, set: () => themeStore.toggleDark() })
+const notifs = ref({ push: true, reminders: true, goals: true })
+
+const name = ref({
+  firstname: '',
+  lastname: '',
+});
+
+const password = ref({
+  current_password: '',
+  new_password: '',
+  new_password_confirmation: '',
+
+})
+
+function handleLogout() {
+  auth.logout();
+}
+
+const sheetStatus = ref({
+  open: false,
+  modal: 'name'
+});
+
+const handleSave = async (modal) => {
+  if(modal == 'name'){
+    await auth.nameChange(name.value);
+  }else if(modal == 'password'){
+    await auth.passwordChange(password.value);
+  }
+}
+
+</script>
+
 <template>
   <div class="settings-page" :class="{ dark: darkMode }">
 
     <!-- Header -->
     <div class="page-header">
+      <button class="back-btn" @click="$router.back()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
       <h1 class="page-title">Settings</h1>
+      <div style="width:32px"></div>
     </div>
 
     <div class="page-body">
@@ -13,7 +83,7 @@
       <div class="card">
         <div class="profile-row">
           <div class="avatar-wrap">
-            <div class="avatar">{{ initials }}</div>
+            <div class="avatar">{{String(auth.user.firstname).charAt(0)}}</div>
             <button class="avatar-edit" @click="triggerAvatarUpload">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -23,41 +93,31 @@
             <input ref="avatarInput" type="file" accept="image/*" class="hidden-input" />
           </div>
           <div class="profile-info">
-            <span class="profile-name">{{ profile.name }}</span>
-            <span class="profile-email">{{ profile.email }}</span>
+            <span class="profile-name">{{ auth.user.firstname }} {{ auth.user.lastname }}</span>
+            <span class="profile-email">{{ auth.user.email }}</span>
           </div>
         </div>
         <div class="divider" />
-        <div class="setting-row" @click="openEdit('name')">
+        <div class="setting-row" @click="()=>{sheetStatus.open=true;sheetStatus.modal= 'name';}">
           <div class="setting-left">
-            <div class="setting-icon" style="background:#e8f5e9">👤</div>
+            <div class="setting-icon" style="background:var(--indevo-border)">👤</div>
             <span class="setting-label">Full Name</span>
           </div>
           <div class="setting-right">
-            <span class="setting-value">{{ profile.name }}</span>
+            <span class="setting-value">{{ auth.user.firstname }} {{ auth.user.lastname }}</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
         </div>
-        <div class="setting-row" @click="openEdit('email')">
+        <div class="setting-row" @click="()=>{sheetStatus.open=true;sheetStatus.modal= 'password';}">
           <div class="setting-left">
-            <div class="setting-icon" style="background:#e3f2fd">✉️</div>
-            <span class="setting-label">Email</span>
-          </div>
-          <div class="setting-right">
-            <span class="setting-value">{{ profile.email }}</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-          </div>
-        </div>
-        <div class="setting-row" @click="openEdit('password')">
-          <div class="setting-left">
-            <div class="setting-icon" style="background:#fff8e1">🔒</div>
+            <div class="setting-icon" style="background:var(--indevo-border)">🔒</div>
             <span class="setting-label">Change Password</span>
           </div>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
         <div class="setting-row danger" @click="handleLogout">
           <div class="setting-left">
-            <div class="setting-icon" style="background:#fee2e2">🚪</div>
+            <div class="setting-icon" style="background:var(--indevo-border)">⏻</div>
             <span class="setting-label danger-text">Log Out</span>
           </div>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -67,42 +127,23 @@
       <!-- ── Preferences ────────────────────────────────────── -->
       <div class="section-label">PREFERENCES</div>
       <div class="card">
-        <div class="setting-row">
+        <!-- Currency row (tap to open picker) -->
+        <div class="setting-row" @click="isCurrencyOpen = true">
           <div class="setting-left">
             <div class="setting-icon" style="background:#f0fdf4">💱</div>
             <span class="setting-label">Currency</span>
           </div>
           <div class="setting-right">
-            <div class="select-wrap">
-              <select v-model="prefs.currency" class="inline-select">
-                <option value="GBP">£ GBP</option>
-                <option value="USD">$ USD</option>
-                <option value="EUR">€ EUR</option>
-                <option value="NGN">₦ NGN</option>
-                <option value="INR">₹ INR</option>
-              </select>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
-            </div>
+        <span class="setting-value">
+          {{ currentCurrency().symbol }} {{ currentCurrency().code }}
+        </span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="#9ca3af" stroke-width="2" stroke-linecap="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
           </div>
         </div>
-        <div class="setting-row">
-          <div class="setting-left">
-            <div class="setting-icon" style="background:#f3e8ff">🌍</div>
-            <span class="setting-label">Language</span>
-          </div>
-          <div class="setting-right">
-            <div class="select-wrap">
-              <select v-model="prefs.language" class="inline-select">
-                <option value="en">English</option>
-                <option value="fr">Français</option>
-                <option value="es">Español</option>
-                <option value="de">Deutsch</option>
-                <option value="ar">العربية</option>
-              </select>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
-            </div>
-          </div>
-        </div>
+
         <div class="setting-row">
           <div class="setting-left">
             <div class="setting-icon" style="background:#1a1a2e">🌙</div>
@@ -148,34 +189,6 @@
         </div>
       </div>
 
-      <!-- ── Privacy & Security ─────────────────────────────── -->
-      <div class="section-label">PRIVACY & SECURITY</div>
-      <div class="card">
-        <div class="setting-row">
-          <div class="setting-left">
-            <div class="setting-icon" style="background:#e3f2fd">🔐</div>
-            <span class="setting-label">PIN Lock</span>
-          </div>
-          <div class="toggle-wrap" @click="security.pin = !security.pin">
-            <div class="toggle" :class="{ on: security.pin }"><div class="toggle-knob"></div></div>
-          </div>
-        </div>
-        <div class="setting-row" @click="handleExport">
-          <div class="setting-left">
-            <div class="setting-icon" style="background:#e8f5e9">📤</div>
-            <span class="setting-label">Export My Data</span>
-          </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-        <div class="setting-row danger" @click="confirmDelete = true">
-          <div class="setting-left">
-            <div class="setting-icon" style="background:#fee2e2">🗑</div>
-            <span class="setting-label danger-text">Delete Account</span>
-          </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-      </div>
-
       <!-- ── About ──────────────────────────────────────────── -->
       <div class="section-label">ABOUT</div>
       <div class="card">
@@ -200,13 +213,6 @@
           </div>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
-        <div class="setting-row" @click="openLink('rate')">
-          <div class="setting-left">
-            <div class="setting-icon" style="background:#fff8e1">⭐</div>
-            <span class="setting-label">Rate the App</span>
-          </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
       </div>
 
       <!-- ── Logo Footer ────────────────────────────────────── -->
@@ -219,73 +225,91 @@
     <!-- ── Edit Bottom Sheet ───────────────────────────────── -->
     <Teleport to="body">
       <Transition name="fade">
-        <div v-if="editSheet.open" class="sheet-overlay" @click.self="editSheet.open = false"></div>
+        <div v-if="sheetStatus.open" class="sheet-overlay" @click.self="sheetStatus.open = false"></div>
       </Transition>
       <Transition name="slide-up">
-        <div v-if="editSheet.open" class="bottom-sheet">
+        <div v-if="sheetStatus.open" class="bottom-sheet">
           <div class="drawer-handle"></div>
           <div class="drawer-header">
-            <h2 class="drawer-title">{{ editSheet.title }}</h2>
+            <h2 class="drawer-title">{{ sheetStatus.modal == 'name' ? 'Change Name' : 'Change Password' }}</h2>
           </div>
           <div class="drawer-body">
-            <template v-if="editSheet.field === 'name'">
+            <template v-if="sheetStatus.open && sheetStatus.modal == 'name'">
               <div class="field-group">
-                <label class="field-label">FULL NAME</label>
+                <label class="field-label">FIRST NAME</label>
                 <div class="input-box">
-                  <span>👤</span>
-                  <input v-model="editSheet.value" class="text-input" placeholder="Your full name" />
+                  <input v-model="name.firstname" class="text-input" placeholder="Your first name" />
+                </div>
+              </div>
+              <div class="field-group">
+                <label class="field-label">LAST NAME</label>
+                <div class="input-box">
+                  <input v-model="name.lastname" class="text-input" placeholder="Your last name" />
                 </div>
               </div>
             </template>
-            <template v-if="editSheet.field === 'email'">
-              <div class="field-group">
-                <label class="field-label">EMAIL ADDRESS</label>
-                <div class="input-box">
-                  <span>✉️</span>
-                  <input v-model="editSheet.value" type="email" class="text-input" placeholder="your@email.com" />
-                </div>
-              </div>
-            </template>
-            <template v-if="editSheet.field === 'password'">
+            <template v-if="sheetStatus.open && sheetStatus.modal == 'password'">
               <div class="field-group">
                 <label class="field-label">CURRENT PASSWORD</label>
                 <div class="input-box">
-                  <span>🔒</span>
-                  <input v-model="editSheet.current" type="password" class="text-input" placeholder="Enter current password" />
+                  <input v-model="password.current_password" type="password" class="text-input" placeholder="Enter current password" />
                 </div>
               </div>
               <div class="field-group">
                 <label class="field-label">NEW PASSWORD</label>
                 <div class="input-box">
-                  <span>🔑</span>
-                  <input v-model="editSheet.value" type="password" class="text-input" placeholder="Enter new password" />
+                  <input v-model="password.new_password" type="password" class="text-input" placeholder="Enter new password" />
                 </div>
               </div>
               <div class="field-group">
                 <label class="field-label">CONFIRM NEW PASSWORD</label>
                 <div class="input-box">
-                  <span>🔑</span>
-                  <input v-model="editSheet.confirm" type="password" class="text-input" placeholder="Repeat new password" />
+                  <input v-model="password.new_password_confirmation" type="password" class="text-input" placeholder="Repeat new password" />
                 </div>
               </div>
             </template>
-            <button class="save-btn" @click="saveEdit">Save Changes</button>
+            <button class="save-btn" @click="()=>{
+              sheetStatus.open = false
+              handleSave(sheetStatus.modal);
+            }">Save Changes</button>
           </div>
         </div>
       </Transition>
     </Teleport>
 
-    <!-- ── Delete Confirm Modal ───────────────────────────── -->
     <Teleport to="body">
       <Transition name="fade">
-        <div v-if="confirmDelete" class="modal-overlay" @click.self="confirmDelete = false">
-          <div class="modal-card">
-            <div class="modal-icon">⚠️</div>
-            <h3 class="modal-title">Delete Account?</h3>
-            <p class="modal-sub">This will permanently delete your account and all your data. This action cannot be undone.</p>
-            <div class="modal-actions">
-              <button class="modal-cancel" @click="confirmDelete = false">Cancel</button>
-              <button class="modal-confirm" @click="handleDelete">Delete</button>
+        <div v-if="isCurrencyOpen" class="picker-overlay" @click="isCurrencyOpen = false"></div>
+      </Transition>
+
+      <Transition name="slide-up">
+        <div v-if="isCurrencyOpen" class="picker-sheet">
+          <div class="picker-handle"></div>
+          <div class="picker-header">
+            <span class="picker-title">Select Currency</span>
+            <button class="picker-cancel" @click="isCurrencyOpen = false">Done</button>
+          </div>
+
+          <div class="picker-list">
+            <div
+                v-for="c in currencies"
+                :key="c.code"
+                class="picker-item"
+                :class="{ selected: prefs.currency === c.code }"
+                @click="selectCurrency(c.code)"
+            >
+              <div class="picker-item-left">
+                <span class="picker-symbol">{{ c.symbol }}</span>
+                <div class="picker-text">
+                  <span class="picker-code">{{ c.code }}</span>
+                  <span class="picker-name">{{ c.name }}</span>
+                </div>
+              </div>
+              <svg v-if="prefs.currency === c.code"
+                   width="20" height="20" viewBox="0 0 24 24" fill="none"
+                   stroke="#007aff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
             </div>
           </div>
         </div>
@@ -295,44 +319,6 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue'
-import { useThemeStore } from '@/stores/theme.store.js'
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
-const themeStore = useThemeStore()
-
-const profile = ref({ name: 'Alex Johnson', email: 'alex@example.com' })
-const initials = computed(() => profile.value.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2))
-const avatarInput = ref(null)
-function triggerAvatarUpload() { avatarInput.value?.click() }
-
-const prefs = ref({ currency: 'GBP', language: 'en' })
-const darkMode = computed({ get: () => themeStore.darkMode, set: () => themeStore.toggleDark() })
-const notifs = ref({ push: true, reminders: true, goals: true })
-const security = ref({ pin: false })
-
-function handleExport() { alert('Your data export will be emailed to ' + profile.value.email) }
-
-const confirmDelete = ref(false)
-function handleDelete() { confirmDelete.value = false; router.push('/login') }
-function handleLogout() { router.push('/login') }
-
-const editSheet = ref({ open: false, field: '', title: '', value: '', current: '', confirm: '' })
-
-function openEdit(field) {
-  editSheet.value = { open: true, field, title: field === 'name' ? 'Edit Name' : field === 'email' ? 'Edit Email' : 'Change Password', value: field === 'name' ? profile.value.name : field === 'email' ? profile.value.email : '', current: '', confirm: '' }
-}
-
-function saveEdit() {
-  if (editSheet.value.field === 'name') profile.value.name = editSheet.value.value
-  else if (editSheet.value.field === 'email') profile.value.email = editSheet.value.value
-  editSheet.value.open = false
-}
-
-function openLink(type) {}
-</script>
 
 <style scoped>
 .settings-page {
@@ -341,6 +327,9 @@ function openLink(type) {}
   font-family: 'Nunito', 'Segoe UI', sans-serif;
   padding-bottom: 100px;
   transition: background 0.3s;
+}
+.bottom-sheet{
+  font-family: 'Nunito', 'Segoe UI', sans-serif;
 }
 .settings-page.dark { background: #1a1a1a; }
 .settings-page.dark .card { background: #2a2a2a; }
@@ -356,11 +345,6 @@ function openLink(type) {}
 .settings-page.dark .setting-row { border-color: #333; }
 .settings-page.dark .setting-row:active { background: #2a2a2a; }
 
-.page-header {
-  padding: 1.25rem 1.25rem 0.75rem;
-  background: #fff; border-bottom: 1px solid #eee;
-  transition: background 0.3s;
-}
 .page-title { font-size: 1.1rem; font-weight: 700; color: #1a1a1a; text-align: center; }
 .page-body { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; }
 .section-label {
@@ -376,7 +360,7 @@ function openLink(type) {}
 .avatar-wrap { position: relative; flex-shrink: 0; }
 .avatar {
   width: 56px; height: 56px; border-radius: 50%;
-  background: linear-gradient(135deg, #2e7d32, #1b5e20);
+  background: linear-gradient(135deg, var(--indevo-green-mid), var(--indevo-green));
   color: #fff; font-size: 1.3rem; font-weight: 800;
   display: flex; align-items: center; justify-content: center;
 }
@@ -415,12 +399,17 @@ function openLink(type) {}
   font-size: 0.82rem; color: #9ca3af; font-family: inherit;
   cursor: pointer; appearance: none; padding-right: 4px;
 }
+
+/* ── toggle component ─────────────────────────────────────────── */
 .toggle-wrap { cursor: pointer; }
 .toggle {
-  width: 44px; height: 24px; border-radius: 999px;
-  background: #e0e3db; position: relative; transition: background 0.25s;
+  width: 44px; height: 24px;
+  border-radius: 999px;
+  background:  var(--indevo-border);
+  position: relative;
+  transition: background 0.25s;
 }
-.toggle.on { background: #2e7d32; }
+.toggle.on { background:  var(--indevo-green-gradiant); }
 .toggle-knob {
   position: absolute; top: 3px; left: 3px;
   width: 18px; height: 18px; border-radius: 50%;
@@ -485,37 +474,149 @@ function openLink(type) {}
   cursor: pointer; font-family: inherit;
 }
 
-/* ── Delete Modal ─────────────────────────────────────────── */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-  z-index: 300; display: flex; align-items: center; justify-content: center;
-  padding: 1.5rem;
-}
-.modal-card {
-  background: #fff; border-radius: 20px; padding: 1.75rem;
-  width: 100%; max-width: 320px;
-  display: flex; flex-direction: column; align-items: center;
-  gap: 0.75rem; text-align: center;
-}
-.modal-icon { font-size: 2.5rem; }
-.modal-title { font-size: 1.1rem; font-weight: 800; color: #1a1a1a; }
-.modal-sub { font-size: 0.85rem; color: #6b7280; line-height: 1.5; }
-.modal-actions { display: flex; gap: 0.75rem; width: 100%; margin-top: 0.5rem; }
-.modal-cancel {
-  flex: 1; padding: 0.85rem; border-radius: 12px;
-  border: 1.5px solid #e0e3db; background: #fff;
-  font-size: 0.9rem; font-weight: 600; color: #1a1a1a;
-  cursor: pointer; font-family: inherit;
-}
-.modal-confirm {
-  flex: 1; padding: 0.85rem; border-radius: 12px;
-  border: none; background: #ef4444;
-  font-size: 0.9rem; font-weight: 700; color: #fff;
-  cursor: pointer; font-family: inherit;
-}
 
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 .slide-up-enter-active, .slide-up-leave-active { transition: transform 0.35s cubic-bezier(0.4,0,0.2,1); }
 .slide-up-enter-from, .slide-up-leave-to { transform: translateX(-50%) translateY(100%); }
+</style>
+
+<style scoped>
+/* ── Currency Picker Sheet ─────────────────────────────── */
+.picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 200;
+}
+
+.picker-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  max-height: 70vh;
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  z-index: 201;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: 'Nunito', 'Segoe UI', sans-serif;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.picker-handle {
+  width: 40px;
+  height: 4px;
+  background: #e0e3db;
+  border-radius: 999px;
+  margin: 1rem auto 0.25rem;
+  flex-shrink: 0;
+}
+
+.picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1.25rem 0.75rem;
+  border-bottom: 1px solid #f0f2ee;
+  flex-shrink: 0;
+}
+
+.picker-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.picker-cancel {
+  background: none;
+  border: none;
+  color: #2e7d32;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 0;
+  font-family: inherit;
+}
+
+.picker-list {
+  overflow-y: auto;
+  padding: 0.25rem 0 1rem;
+}
+
+.picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid #f5f6f3;
+}
+
+.picker-item:last-child {
+  border-bottom: none;
+}
+
+.picker-item:active {
+  background: #f5f6f3;
+}
+
+.picker-item.selected {
+  background: #f0fdf4;
+}
+
+.picker-item-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.picker-symbol {
+  font-size: 1.25rem;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #f0fdf4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1a1a1a;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.picker-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.picker-code {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.picker-name {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+/* Dark mode — matches your existing .settings-page.dark pattern */
+.settings-page.dark ~ * .picker-sheet,
+.dark .picker-sheet { background: #2a2a2a; }
+.dark .picker-header { border-bottom-color: #333; }
+.dark .picker-title,
+.dark .picker-code { color: #fff; }
+.dark .picker-name { color: #9ca3af; }
+.dark .picker-item { border-bottom-color: #333; }
+.dark .picker-item:active { background: #1a1a1a; }
+.dark .picker-item.selected { background: #1f3a24; }
+.dark .picker-symbol { background: #1f3a24; color: #fff; }
+.dark .picker-handle { background: #444; }
 </style>

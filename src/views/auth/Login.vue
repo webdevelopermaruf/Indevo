@@ -57,7 +57,9 @@ async function handleLogin() {
           @click="handleLogin"
       />
 
-      <p class="forgot-text">Forgot Password?</p>
+      <div class="forget-password">
+        <RouterLink to="/forgot" class="forgot-text">Forgot Password?</RouterLink>
+      </div>
 
       <div class="divider"><span>or</span></div>
 
@@ -103,12 +105,16 @@ async function handleLogin() {
   width: 100%;
   margin-top: 0.25rem;
 }
-
+.forget-password{
+  width: 100%;
+  text-align: center;
+  margin-top: 1rem;
+}
 .forgot-text {
   text-align: center;
   font-size: 0.88rem;
-  color: #6b7280;
-  margin: 0.75rem 0 0;
+  color: var(--indevo-text);
+  text-decoration: none;
   cursor: pointer;
 }
 

@@ -42,6 +42,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     async function initAuth() {
+        clearError()
         try {
             const res = await api.post('/auth/refresh')
             accessToken.value = res.data.data.access_token
@@ -74,6 +75,26 @@ export const useAuthStore = defineStore('auth', () => {
             setError('Login failed. Please try again.')
         } finally {
             loading.value = false
+        }
+    }
+
+    async function forgotPassword() {
+        loading.value = true
+        clearError()
+        try{
+            const response = await api.post('/auth/forgot', {
+                email: LoginData.email
+            })
+            if (response.data.success === true) {
+                return true;
+            }else{
+                return false;
+                setError('Something went wrong. Please try again.')
+            }
+        }catch(err){
+            setError('Something went wrong. Please try again.')
+        }finally {
+            loading.value = false;
         }
     }
 
@@ -129,14 +150,69 @@ export const useAuthStore = defineStore('auth', () => {
         }
     }
 
-    function logout() {
-        user.value = null
-        accessToken.value = null
-        localStorage.removeItem('token')
+    async function logout() {
+        clearError()
+        try {
+            await api.get('/auth/logout')
+        } catch (err) {
+            console.error('Logout request failed', err)
+        } finally {
+            user.value = null
+            accessToken.value = null;
+            await router.push('/login')
+        }
+    }
+
+    async function nameChange(body){
+        loading.value = true
+        try{
+            const response = await api.post('/user/change/name', body);
+            if(response.data.success === true){
+                window.location.reload();
+            }else{
+                setError('Name change failed. Please try again.');
+            }
+        }catch(err){
+            setError('Name change failed. Please try again.')
+        }finally {
+            loading.value = false
+        }
+    }
+
+    async function passwordChange(body){
+        loading.value = true
+        try{
+            const res = await api.post('/user/change/password', body);
+            if(res.data.success === true){
+                await logout();
+            }else{
+                setError('Password change failed. Please try again.');
+            }
+        }catch(err){
+            setError('Name change failed. Please try again.')
+        }finally {
+            loading.value = false
+        }
+    }
+
+    async function preferenceChange(body){
+        loading.value = true
+        try{
+            const res = await api.post('/user/change/preference', body);
+            if(res.data.success === true){
+                return true;
+            }else{
+                setError('Preference change failed. Please try again.')
+            }
+        }catch(err){
+            setError('Preference change failed. Please try again.')
+        }finally {
+            loading.value = false
+        }
     }
 
     return {
-        user, accessToken, loading, error, registerData, LoginData, initAuth,
-        login, register, logout, setError, clearError, verify, verifyCode, initialized
+        user, accessToken, loading, error, registerData, LoginData, initAuth,forgotPassword,
+        login, register, logout, verify, verifyCode, initialized, passwordChange, nameChange, preferenceChange
     }
 })

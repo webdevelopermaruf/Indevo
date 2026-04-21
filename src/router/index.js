@@ -16,6 +16,12 @@ const routes = [
         meta: { requiresGuest: true }
     },
     {
+        path: '/forgot',
+        name: 'Forget',
+        component: () => import('@/views/auth/Forget.vue'),
+        meta: { requiresGuest: true }
+    },
+    {
         path: '/register',
         name: 'Register',
         component: () => import('@/views/auth/Registration.vue'),
@@ -104,7 +110,7 @@ const router = createRouter({
     routes
 })
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, from) => {
     const auth = useAuthStore()
 
     // Only call initAuth on first load, not after explicit login/logout
@@ -116,14 +122,14 @@ router.beforeEach(async (to, from, next) => {
 
     const isAuthenticated = !!auth.accessToken
     if (to.meta.requiresAuth && !isAuthenticated) {
-        return next({ name: 'Login' })
+        return { name: 'Login' }
     }
 
     if (to.meta.requiresGuest && isAuthenticated) {
-        return next({ name: 'Dashboard' })
+        return { name: 'Dashboard' }
     }
 
-    next()
+    return true;
 })
 
 export default router

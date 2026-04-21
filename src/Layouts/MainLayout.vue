@@ -62,7 +62,7 @@ const indicatorLeft = ref(0)
 const navItems = [
   { path: '/expenses',      matches: ['/expenses', '/expenses/add'] },
   { path: '/notifications', matches: ['/notifications', '/goals'] },
-  { path: '/dashboard',     matches: ['/dashboard'] },
+  { path: '/',     matches: ['/'] },
   { path: '/skills',        matches: ['/skills'] },
   { path: '/settings',      matches: ['/settings'] },
 ]

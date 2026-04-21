@@ -268,14 +268,6 @@ function handleSave() {
   padding-bottom: 100px;
 }
 
-.page-header {
-  background: #f0f2ee;
-  padding: 1.25rem 1.25rem 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
 .back-btn {
   background: none; border: none; cursor: pointer;
   color: #1a1a1a; padding: 0; display: flex; align-items: center;
