@@ -1,3 +1,101 @@
+<script setup>
+import {computed, onMounted, ref} from 'vue'
+import {useExpenseStore} from "@/stores/expense.store.js";
+import {getSymbol} from "@/services/currency.service.js";
+import {useAuthStore} from "@/stores/auth.store.js";
+
+const drawerOpen = ref(false)
+const dateFocused = ref(false)
+
+const expenseStore = useExpenseStore();
+const today = new Date()
+const todayFormatted = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+const pad = (n) => String(n).padStart(2, '0');
+
+const form = ref({
+  description: '',
+  amount: '',
+  category: 'Food',
+  currency: useAuthStore().user.currency,
+  expense_date: `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`,
+  recurring: 'once',
+  note: ''
+})
+
+const categories = [
+  { icon: '🍕', label: 'Food' },
+  { icon: '🚇', label: 'Transport' },
+  { icon: '⚡', label: 'Bills' },
+  { icon: '🎬', label: 'Entertain' },
+  { icon: '💊', label: 'Health' },
+  { icon: '➕', label: 'Other' },
+]
+
+const recurringOptions = [
+  { label: 'One-time', value: 'one-time' },
+  { label: 'Daily', value: 'daily' },
+  { label: 'Weekly', value: 'weekly' },
+  { label: 'Monthly', value: 'monthly' },
+]
+
+async function handleSave() {
+  await expenseStore.addExpense(form.value);
+  await expenseStore.getExpenses();
+  drawerOpen.value = false
+}
+const CATEGORY_META = {
+  food:             { label: 'Food',          color: '#4caf50', icon: '🍕', bg: '#fce4ec' },
+  transport:        { label: 'Transport',     color: '#f06292', icon: '🚇', bg: '#e8eaf6' },
+  bills:            { label: 'Bills',         color: '#ffa726', icon: '⚡', bg: '#fff8e1' },
+  health_entertain: { label: 'Health & Entertain',  color: '#ab47bc', icon: '️💖', bg: '#f3e5f5' },
+  health: { label: 'Health',  color: '#ab47bc', icon: '💊', bg: '#f3e5f5' },
+  entertainment: { label: 'Entertainment',  color: '#ab47bc', icon: '🎬', bg: '#f3e5f5' },
+  other:            { label: 'Other',         color: '#64b5f6', icon: '📦', bg: '#e3f2fd' },
+};
+
+const circumference = 2 * Math.PI * 45; // ~283
+
+const breakdown = computed(() => expenseStore.data?.dashboard_expense?.breakdown ?? {});
+const totalSpent = computed(() => expenseStore.data?.dashboard_expense?.total_spent ?? 0);
+const recentExpenses = computed(() => expenseStore.data?.recent_expenses ?? []);
+
+const legendItems = computed(() =>
+    Object.entries(breakdown.value).map(([key, v]) => ({
+      key,
+      label: CATEGORY_META[key]?.label ?? key,
+      color: CATEGORY_META[key]?.color ?? '#999',
+      percentage: v.percentage ?? 0,
+      amount: v.amount ?? 0,
+    }))
+);
+
+const donutSegments = computed(() => {
+  let offset = 0;
+  return legendItems.value
+      .filter(i => i.percentage > 0)
+      .map(i => {
+        const length = (i.percentage / 100) * circumference;
+        const seg = { key: i.key, color: i.color, length, offset };
+        offset += length;
+        return seg;
+      });
+});
+
+function categoryMeta(key) {
+  return CATEGORY_META[key] ?? { label: key, color: '#999', icon: '💵', bg: '#eee' };
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+onMounted(async () => {
+  await expenseStore.getExpenses();
+})
+</script>
+
 <template>
   <div class="expenses-page">
 
@@ -12,126 +110,155 @@
       <div style="width:32px"></div>
     </div>
 
-    <!-- Spending Breakdown -->
-    <div class="card">
-      <h2 class="card-title">Spending Breakdown</h2>
-      <div class="breakdown-content">
-        <div class="donut-wrapper">
-          <svg viewBox="0 0 120 120" class="donut-svg">
-            <circle cx="60" cy="60" r="45" fill="none" stroke="#4caf50" stroke-width="18"
-                    stroke-dasharray="99 283" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
-            <circle cx="60" cy="60" r="45" fill="none" stroke="#f06292" stroke-width="18"
-                    stroke-dasharray="71 283" stroke-dashoffset="-99" transform="rotate(-90 60 60)"/>
-            <circle cx="60" cy="60" r="45" fill="none" stroke="#ffa726" stroke-width="18"
-                    stroke-dasharray="42 283" stroke-dashoffset="-170" transform="rotate(-90 60 60)"/>
-            <circle cx="60" cy="60" r="45" fill="none" stroke="#64b5f6" stroke-width="18"
-                    stroke-dasharray="71 283" stroke-dashoffset="-212" transform="rotate(-90 60 60)"/>
-          </svg>
-          <div class="donut-center">
-            <span class="donut-label">Spent</span>
-            <span class="donut-amount">$1,214</span>
-          </div>
-        </div>
-        <div class="legend">
-          <div class="legend-item">
-            <span class="legend-dot" style="background:#4caf50"></span>
-            <span class="legend-name">Food</span>
-            <span class="legend-pct">35%</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot" style="background:#f06292"></span>
-            <span class="legend-name">Transport</span>
-            <span class="legend-pct">25%</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot" style="background:#ffa726"></span>
-            <span class="legend-name">Bills</span>
-            <span class="legend-pct">15%</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot" style="background:#64b5f6"></span>
-            <span class="legend-name">Other</span>
-            <span class="legend-pct">25%</span>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Loading / Error -->
+    <div v-if="expenseStore.loading" class="state-message">Loading…</div>
+    <div v-else-if="expenseStore.error" class="state-message error">{{ expenseStore.error }}</div>
 
-    <!-- Category Budgets -->
-    <div class="section">
-      <h2 class="section-title">Category Budgets</h2>
-      <div class="budget-card">
-        <div class="budget-top">
-          <div class="budget-icon" style="background:#fce4ec;">🍕</div>
-          <div class="budget-info">
-            <span class="budget-name">Food & Dining</span>
-            <span class="budget-sub">$425 of $500</span>
+    <template v-else>
+      <!-- Spending Breakdown -->
+      <div class="card">
+        <h2 class="card-title">Spending Breakdown</h2>
+        <div class="breakdown-content">
+          <div class="donut-wrapper">
+            <svg viewBox="0 0 120 120" class="donut-svg">
+              <circle
+                  v-for="seg in donutSegments"
+                  :key="seg.key"
+                  cx="60" cy="60" r="45"
+                  fill="none"
+                  :stroke="seg.color"
+                  stroke-width="18"
+                  :stroke-dasharray="`${seg.length} ${circumference}`"
+                  :stroke-dashoffset="-seg.offset"
+                  transform="rotate(-90 60 60)"
+              />
+            </svg>
+            <div class="donut-center">
+              <span class="donut-label">Spent</span>
+              <span class="donut-amount">{{ getSymbol(totalSpent, ' ') }}</span>
+            </div>
           </div>
-          <span class="budget-pct warning">85% ⚠️</span>
-        </div>
-        <div class="budget-bar"><div class="budget-fill" style="width:85%; background:#f06292;"></div></div>
-      </div>
-      <div class="budget-card">
-        <div class="budget-top">
-          <div class="budget-icon" style="background:#e8eaf6;">🚇</div>
-          <div class="budget-info">
-            <span class="budget-name">Transport</span>
-            <span class="budget-sub">$186 of $300</span>
+          <div class="legend">
+            <div v-for="item in legendItems" :key="item.key" class="legend-item">
+              <span class="legend-dot" :style="{ background: item.color }"></span>
+              <span class="legend-name">{{ item.label }}</span>
+              <span class="legend-pct">{{ item.percentage }}%</span>
+            </div>
           </div>
-          <span class="budget-pct normal">62%</span>
         </div>
-        <div class="budget-bar"><div class="budget-fill" style="width:62%; background:#4caf50;"></div></div>
       </div>
-      <div class="budget-card">
-        <div class="budget-top">
-          <div class="budget-icon" style="background:#fff8e1;">⚡</div>
-          <div class="budget-info">
-            <span class="budget-name">Bills & Utilities</span>
-            <span class="budget-sub">$160 of $400</span>
-          </div>
-          <span class="budget-pct normal">40%</span>
-        </div>
-        <div class="budget-bar"><div class="budget-fill" style="width:40%; background:#4caf50;"></div></div>
-      </div>
-    </div>
 
-    <!-- Recent Expenses -->
-    <div class="section">
-      <h2 class="section-title">Recent Expenses</h2>
-      <div class="recent-card">
-        <div class="expense-item">
-          <div class="expense-icon" style="background:#fce4ec;">🛒</div>
-          <div class="expense-info">
-            <span class="expense-name">Grocery Store</span>
-            <span class="expense-sub">Feb 21 · Food</span>
+      <!-- Category Budgets (static for now) -->
+      <div class="section">
+        <h2 class="section-title">Category Budgets</h2>
+        <div class="budget-card">
+          <div class="budget-top">
+            <div class="budget-icon" style="background:#fce4ec;">🍕</div>
+            <div class="budget-info">
+              <span class="budget-name">Food & Dining</span>
+              <span class="budget-sub">{{getSymbol(expenseStore.data?.dashboard_expense.breakdown.food.amount)}} of {{ getSymbol(totalSpent) }}</span>
+            </div>
+            <span class="budget-pct warning">{{getSymbol(expenseStore.data?.dashboard_expense.breakdown.food.percentage)}}%</span>
           </div>
-          <span class="expense-amount">-$87.30</span>
+          <div class="budget-bar">
+            <div
+                class="budget-fill"
+                :style="{
+                  width: (expenseStore.data?.dashboard_expense.breakdown.food.percentage) + '%',
+                  background: 'var(--indevo-green-gradiant)'
+                }"
+            ></div>
+          </div>
         </div>
-        <div class="expense-divider"></div>
-        <div class="expense-item">
-          <div class="expense-icon" style="background:#fff8e1;">⚡</div>
-          <div class="expense-info">
-            <span class="expense-name">Electric Bill</span>
-            <span class="expense-sub">Feb 20 · Bills</span>
+        <div class="budget-card">
+          <div class="budget-top">
+            <div class="budget-icon" style="background:#e8eaf6;">🚇</div>
+            <div class="budget-info">
+              <span class="budget-name">Transport</span>
+              <span class="budget-sub">{{getSymbol(expenseStore.data?.dashboard_expense.breakdown.transport.amount)}} of {{ getSymbol(totalSpent) }}</span>
+            </div>
+            <span class="budget-pct normal">{{getSymbol(expenseStore.data?.dashboard_expense.breakdown.transport.percentage)}}%</span>
           </div>
-          <span class="expense-amount">-$95.00</span>
+          <div class="budget-bar">
+            <div
+                class="budget-fill"
+                :style="{
+                  width: (expenseStore.data?.dashboard_expense.breakdown.transport.percentage) + '%',
+                  background: 'var(--indevo-green-gradiant)'
+                }"
+            ></div>
+          </div>
         </div>
-        <div class="expense-divider"></div>
-        <div class="expense-item">
-          <div class="expense-icon" style="background:#e8eaf6;">🚇</div>
-          <div class="expense-info">
-            <span class="expense-name">Monthly Pass</span>
-            <span class="expense-sub">Feb 19 · Transport</span>
+        <div class="budget-card">
+          <div class="budget-top">
+            <div class="budget-icon" style="background:#fff8e1;">⚡</div>
+            <div class="budget-info">
+              <span class="budget-name">Bills & Utilities</span>
+              <span class="budget-sub">{{getSymbol(expenseStore.data?.dashboard_expense.breakdown.bills.amount)}} of {{ getSymbol(totalSpent) }}</span>
+            </div>
+            <span class="budget-pct normal">{{getSymbol(expenseStore.data?.dashboard_expense.breakdown.bills.percentage)}}%</span>
           </div>
-          <span class="expense-amount">-$45.00</span>
+          <div class="budget-bar">
+            <div
+                class="budget-fill"
+                :style="{
+                  width: (expenseStore.data?.dashboard_expense.breakdown.bills.percentage) + '%',
+                  background: 'var(--indevo-green-gradiant)'
+                }"
+            ></div>
+          </div>
+        </div>
+        <div class="budget-card">
+          <div class="budget-top">
+            <div class="budget-icon" style="background:#fff8e1;">💊</div>
+            <div class="budget-info">
+              <span class="budget-name">Health & Entertainment</span>
+              <span class="budget-sub">{{getSymbol(expenseStore.data?.dashboard_expense.breakdown.health_entertain.amount)}} of {{ getSymbol(totalSpent) }}</span>
+            </div>
+            <span class="budget-pct normal">{{getSymbol(expenseStore.data?.dashboard_expense.breakdown.health_entertain.percentage)}}%</span>
+          </div>
+          <div class="budget-bar">
+            <div
+                class="budget-fill"
+                :style="{
+                  width: (expenseStore.data?.dashboard_expense.breakdown.health_entertain.percentage) + '%',
+                  background: 'var(--indevo-green-gradiant)'
+                }"
+            ></div>
+          </div>
         </div>
       </div>
-    </div>
+
+      <!-- Recent Expenses -->
+      <div class="section">
+        <h2 class="section-title">Recent Expenses</h2>
+        <div class="recent-card">
+          <div v-if="recentExpenses.length === 0" class="empty-state">
+            No expenses yet. Tap + to add your first one.
+          </div>
+          <template v-else>
+            <template v-for="(item, idx) in recentExpenses" :key="item.id ?? idx">
+              <div class="expense-item">
+                <div class="expense-icon" :style="{ background: categoryMeta(item.category).bg }">
+                  {{ categoryMeta(item.category).icon }}
+                </div>
+                <div class="expense-info">
+                  <span class="expense-name">{{ item.description || item.name }}</span>
+                  <span class="expense-sub">{{ formatDate(item.date) }} · {{ categoryMeta(item.category).label }}</span>
+                </div>
+                <span class="expense-amount">-${{ Number(item.amount).toFixed(2) }}</span>
+              </div>
+              <div v-if="idx < recentExpenses.length - 1" class="expense-divider"></div>
+            </template>
+          </template>
+        </div>
+      </div>
+    </template>
 
     <!-- FAB -->
     <button class="fab" @click="drawerOpen = true">＋</button>
 
-    <!-- Custom Bottom Sheet -->
+    <!-- Custom Bottom Sheet (unchanged) -->
     <Teleport to="body">
       <Transition name="fade">
         <div v-if="drawerOpen" class="sheet-overlay" @click.self="drawerOpen = false"></div>
@@ -168,7 +295,7 @@
                     :key="cat.label"
                     class="cat-btn"
                     :class="{ selected: form.category === cat.label }"
-                    @click="form.category = cat.label"
+                    @click="form.category = cat.label.toLowerCase()"
                 >
                   <span>{{ cat.icon }}</span> {{ cat.label }}
                 </button>
@@ -221,51 +348,16 @@
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
-
-const drawerOpen = ref(false)
-const dateFocused = ref(false)
-
-const today = new Date()
-const todayFormatted = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-
-const form = ref({
-  description: '',
-  amount: '',
-  category: 'Food',
-  date: '',
-  recurring: 'one-time',
-  notes: ''
-})
-
-const categories = [
-  { icon: '🍕', label: 'Food' },
-  { icon: '🚇', label: 'Transport' },
-  { icon: '⚡', label: 'Bills' },
-  { icon: '🎬', label: 'Entertain' },
-  { icon: '💊', label: 'Health' },
-  { icon: '➕', label: 'Other' },
-]
-
-const recurringOptions = [
-  { label: 'One-time', value: 'one-time' },
-  { label: 'Daily', value: 'daily' },
-  { label: 'Weekly', value: 'weekly' },
-  { label: 'Monthly', value: 'monthly' },
-]
-
-function handleSave() {
-  drawerOpen.value = false
-}
-</script>
-
 <style scoped>
 .expenses-page {
   min-height: 100vh;
   background: #f0f2ee;
   font-family: 'Nunito', 'Segoe UI', sans-serif;
   padding-bottom: 100px;
+}
+
+.bottom-sheet{
+  font-family: 'Nunito', 'Segoe UI', sans-serif;
 }
 
 .back-btn {
@@ -342,7 +434,7 @@ function handleSave() {
   right: calc(50% - 210px);
   width: 52px; height: 52px;
   border-radius: 16px;
-  background: #2e7d32;
+  background: var(--indevo-green-gradiant);
   color: #fff; font-size: 1.6rem;
   border: none; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
@@ -420,7 +512,7 @@ function handleSave() {
 
 .text-input {
   flex: 1; border: none; background: transparent;
-  outline: none; font-size: 0.95rem; color: #1a1a1a; font-family: inherit;
+  outline: none; font-size: 0.95rem; color: #1a1a1a; 
 }
 
 .text-input::placeholder { color: #9ca3af; }
@@ -430,7 +522,7 @@ function handleSave() {
 .amount-input {
   flex: 1; border: none; background: transparent;
   outline: none; font-size: 1.1rem; font-weight: 700;
-  color: #2e7d32; font-family: inherit;
+  color: #2e7d32; 
 }
 
 .amount-input::placeholder { color: #2e7d32; opacity: 0.6; }
@@ -441,7 +533,7 @@ function handleSave() {
   padding: 0.5rem 1rem; border-radius: 999px;
   border: 1.5px solid #e0e3db; background: #fff;
   font-size: 0.85rem; font-weight: 500; color: #1a1a1a;
-  cursor: pointer; font-family: inherit;
+  cursor: pointer; 
   display: flex; align-items: center; gap: 0.3rem;
   transition: all 0.2s;
 }
@@ -465,7 +557,7 @@ function handleSave() {
 .notes-input {
   flex: 1; border: none; background: transparent;
   outline: none; font-size: 0.9rem; color: #1a1a1a;
-  font-family: inherit; resize: none; min-height: 70px; width: 100%;
+   resize: none; min-height: 70px; width: 100%;
 }
 
 .notes-input::placeholder { color: #9ca3af; }
@@ -476,7 +568,7 @@ function handleSave() {
   box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
   color: #fff; border: none; border-radius: 12px;
   padding: 0.9rem 1.5rem; font-size: 1rem; font-weight: 700;
-  cursor: pointer; font-family: inherit;
+  cursor: pointer; 
 }
 
 .save-btn:hover { opacity: 0.92; }

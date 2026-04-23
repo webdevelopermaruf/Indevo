@@ -3,13 +3,12 @@ import {ref, computed, onMounted} from 'vue'
 import { useThemeStore } from '@/stores/theme.store.js'
 import {useAuthStore} from "@/stores/auth.store.js";
 
+const auth = useAuthStore()
 const themeStore = useThemeStore()
 
-const auth = useAuthStore()
-const avatarInput = ref(null)
-function triggerAvatarUpload() { avatarInput.value?.click() }
+const darkMode = computed({ get: () => themeStore.darkMode, set: () => themeStore.toggleDark() })
+const prefs = ref({ currency: auth.user.currency ?? 'GBP', dark_mode: darkMode.value, push_notification: auth.user.preferences.push_notification ?? false, reminder_alert: auth.user.preferences.reminder_alert ?? false, goal_deadline_alert: auth.user.preferences.goal_deadline_alert ?? false })
 
-const prefs = ref({ currency: 'GBP',  })
 const isCurrencyOpen = ref(false)
 
 const currencies = [
@@ -21,6 +20,7 @@ const currencies = [
 ]
 function selectCurrency(code) {
   prefs.value.currency = code
+  savePreferences();
   isCurrencyOpen.value = false
 }
 function currentCurrency() {
@@ -28,7 +28,6 @@ function currentCurrency() {
 }
 
 
-const darkMode = computed({ get: () => themeStore.darkMode, set: () => themeStore.toggleDark() })
 const notifs = ref({ push: true, reminders: true, goals: true })
 
 const name = ref({
@@ -60,6 +59,10 @@ const handleSave = async (modal) => {
   }
 }
 
+const savePreferences = async()=> {
+  await auth.preferenceChange(prefs.value)
+}
+
 </script>
 
 <template>
@@ -84,12 +87,6 @@ const handleSave = async (modal) => {
         <div class="profile-row">
           <div class="avatar-wrap">
             <div class="avatar">{{String(auth.user.firstname).charAt(0)}}</div>
-            <button class="avatar-edit" @click="triggerAvatarUpload">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-              </svg>
-            </button>
             <input ref="avatarInput" type="file" accept="image/*" class="hidden-input" />
           </div>
           <div class="profile-info">
@@ -149,7 +146,10 @@ const handleSave = async (modal) => {
             <div class="setting-icon" style="background:#1a1a2e">🌙</div>
             <span class="setting-label">Dark Mode</span>
           </div>
-          <div class="toggle-wrap" @click="themeStore.toggleDark()">
+          <div class="toggle-wrap" @click="()=>{
+            themeStore.toggleDark()
+            savePreferences()
+          }">
             <div class="toggle" :class="{ on: darkMode }">
               <div class="toggle-knob"></div>
             </div>
@@ -165,8 +165,11 @@ const handleSave = async (modal) => {
             <div class="setting-icon" style="background:#fff8e1">🔔</div>
             <span class="setting-label">Push Notifications</span>
           </div>
-          <div class="toggle-wrap" @click="notifs.push = !notifs.push">
-            <div class="toggle" :class="{ on: notifs.push }"><div class="toggle-knob"></div></div>
+          <div class="toggle-wrap" @click="()=>{
+            prefs.push_notification = !prefs.push_notification
+            savePreferences();
+          }">
+            <div class="toggle" :class="{ on: prefs.push_notification }"><div class="toggle-knob"></div></div>
           </div>
         </div>
         <div class="setting-row">
@@ -174,8 +177,11 @@ const handleSave = async (modal) => {
             <div class="setting-icon" style="background:#e8f5e9">⏰</div>
             <span class="setting-label">Reminder Alerts</span>
           </div>
-          <div class="toggle-wrap" @click="notifs.reminders = !notifs.reminders">
-            <div class="toggle" :class="{ on: notifs.reminders }"><div class="toggle-knob"></div></div>
+          <div class="toggle-wrap" @click="()=>{
+            prefs.reminder_alert = !prefs.reminder_alert
+            savePreferences();
+          }">
+            <div class="toggle" :class="{ on: prefs.reminder_alert }"><div class="toggle-knob"></div></div>
           </div>
         </div>
         <div class="setting-row">
@@ -183,8 +189,11 @@ const handleSave = async (modal) => {
             <div class="setting-icon" style="background:#f3e8ff">🎯</div>
             <span class="setting-label">Goal Deadline Alerts</span>
           </div>
-          <div class="toggle-wrap" @click="notifs.goals = !notifs.goals">
-            <div class="toggle" :class="{ on: notifs.goals }"><div class="toggle-knob"></div></div>
+          <div class="toggle-wrap" @click="()=>{
+            prefs.goal_deadline_alert = !prefs.goal_deadline_alert
+            savePreferences();
+          }">
+            <div class="toggle" :class="{ on: prefs.goal_deadline_alert }"><div class="toggle-knob"></div></div>
           </div>
         </div>
       </div>
