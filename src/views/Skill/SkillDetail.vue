@@ -1,116 +1,15 @@
-<template>
-  <div class="detail-page">
-
-    <!-- Header -->
-    <div class="page-header">
-      <button class="back-btn" @click="$router.back()">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="15 18 9 12 15 6"/>
-        </svg>
-      </button>
-      <h1 class="page-title">{{ skill.name }}</h1>
-      <div style="width:32px"></div>
-    </div>
-
-    <!-- Banner -->
-    <div class="skill-banner" :style="{ background: skill.color }">
-      <span class="banner-emoji">{{ skill.emoji }}</span>
-    </div>
-
-    <!-- Meta pills -->
-    <div class="meta-pills">
-      <span class="meta-pill diff">
-        <span class="diff-dot"></span> {{ skill.difficulty }}
-      </span>
-      <span class="meta-pill xp">⭐ {{ skill.xp }} XP Reward</span>
-      <span class="meta-pill time">⏱ ~{{ skill.duration }}</span>
-      <span class="meta-pill steps">📋 {{ skill.steps.length }} Steps</span>
-    </div>
-
-    <!-- Progress -->
-    <div class="progress-section">
-      <span class="progress-lbl">Your Progress</span>
-      <span class="progress-count">{{ completedCount }} / {{ skill.steps.length }}</span>
-    </div>
-    <div class="progress-bar-full">
-      <div class="progress-bar-fill" :style="{ width: (completedCount / skill.steps.length * 100) + '%', background: skill.color }"></div>
-    </div>
-
-    <!-- Steps -->
-    <div class="steps-list">
-      <div
-          v-for="(step, idx) in skill.steps"
-          :key="step.id"
-          class="step-card"
-          :class="{ expanded: expandedStep === idx, completed: completedSteps.includes(idx) }"
-      >
-        <div class="step-header" @click="toggleStep(idx)">
-          <div class="step-num" :class="{ done: completedSteps.includes(idx) }" :style="completedSteps.includes(idx) ? {} : { background: skill.color }">
-            <svg v-if="completedSteps.includes(idx)" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-            <span v-else>{{ idx + 1 }}</span>
-          </div>
-          <div class="step-title-wrap">
-            <span class="step-title">{{ step.title }}</span>
-            <span class="step-sub">{{ step.subtitle }}</span>
-          </div>
-          <svg class="step-chevron" :class="{ rotated: expandedStep === idx }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round">
-            <polyline points="6 9 12 15 18 9"/>
-          </svg>
-        </div>
-
-        <!-- Expanded content -->
-        <div v-if="expandedStep === idx" class="step-content">
-          <!-- Image placeholder -->
-          <div class="step-img" :style="{ background: step.imgBg }">
-            <span class="step-img-emoji">{{ step.imgEmoji }}</span>
-            <span class="step-img-caption">{{ step.imgCaption }}</span>
-          </div>
-
-          <!-- Description -->
-          <p class="step-desc">{{ step.description }}</p>
-
-          <!-- Video link -->
-          <div v-if="step.video" class="video-link">
-            <div class="video-play">▶</div>
-            <div>
-              <span class="video-title">{{ step.video }}</span>
-              <span class="video-sub">Tap to watch video tutorial</span>
-            </div>
-          </div>
-
-          <!-- Pro tip -->
-          <div v-if="step.tip" class="pro-tip">
-            <span class="tip-icon">💡</span>
-            <span><strong>Pro Tip:</strong> {{ step.tip }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bottom CTA -->
-    <div class="bottom-cta">
-      <button
-          class="mark-btn"
-          :style="{ background: skill.color }"
-          @click="markCompleted"
-      >
-        {{ allDone ? '✓ All Steps Done!' : 'Mark as Completed' }}
-      </button>
-    </div>
-
-  </div>
-</template>
-
 <script setup>
-import { ref, computed, watch } from 'vue'
+import {ref, computed, watch, onMounted} from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import {colorForSkill} from "@/services/skillcolor.service.js";
+import {useSkillStore} from "@/stores/skill.store.js";
+
 
 const router = useRouter()
 const route = useRoute()
 
 // In a real app this would come from a store/API based on route.params.id
+const skillStore = useSkillStore()
 const skillsData = {
   'deep-clean': {
     name: 'Deep Clean Home',
@@ -248,7 +147,117 @@ function markCompleted() {
     router.push('/skills/' + route.params.id + '/mastered')
   }
 }
+
+onMounted(async () => {
+  await skillStore.getSpecificSkills(route.params.id);
+})
 </script>
+<template>
+  <div class="detail-page">
+
+    <!-- Header -->
+    <div class="page-header">
+      <button class="back-btn" @click="$router.back()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      <h1 class="page-title">{{ skill.name }}</h1>
+      <div style="width:32px"></div>
+    </div>
+
+    <!-- Banner -->
+    <div class="skill-banner" :style="{ background: colorForSkill(skill) }">
+      <span class="banner-emoji">{{ skill.emoji }}</span>
+    </div>
+
+    <!-- Meta pills -->
+    <div class="meta-pills">
+      <span class="meta-pill diff">
+        <span class="diff-dot"></span> {{ skill.difficulty }}
+      </span>
+      <span class="meta-pill xp">⭐ {{ skill.xp }} XP Reward</span>
+      <span class="meta-pill time">⏱ ~{{ skill.duration }}</span>
+      <span class="meta-pill steps">📋 {{ skill.steps.length }} Steps</span>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-section">
+      <span class="progress-lbl">Your Progress</span>
+      <span class="progress-count">{{ completedCount }} / {{ skill.steps.length }}</span>
+    </div>
+    <div class="progress-bar-full">
+      <div class="progress-bar-fill" :style="{ width: (completedCount / skill.steps.length * 100) + '%', background: skill.color }"></div>
+    </div>
+
+    <!-- Steps -->
+    <div class="steps-list">
+      <div
+          v-for="(step, idx) in skill.steps"
+          :key="step.id"
+          class="step-card"
+          :class="{ expanded: expandedStep === idx, completed: completedSteps.includes(idx) }"
+      >
+        <div class="step-header" @click="toggleStep(idx)">
+          <div class="step-num" :class="{ done: completedSteps.includes(idx) }" :style="completedSteps.includes(idx) ? {} : { background: skill.color }">
+            <svg v-if="completedSteps.includes(idx)" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span v-else>{{ idx + 1 }}</span>
+          </div>
+          <div class="step-title-wrap">
+            <span class="step-title">{{ step.title }}</span>
+            <span class="step-sub">{{ step.subtitle }}</span>
+          </div>
+          <svg class="step-chevron" :class="{ rotated: expandedStep === idx }" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+
+        <!-- Expanded content -->
+        <div v-if="expandedStep === idx" class="step-content">
+          <!-- Image placeholder -->
+          <div class="step-img" :style="{ background: step.imgBg }">
+            <span class="step-img-emoji">{{ step.imgEmoji }}</span>
+            <span class="step-img-caption">{{ step.imgCaption }}</span>
+          </div>
+
+          <!-- Description -->
+          <p class="step-desc">{{ step.description }}</p>
+
+          <!-- Video link -->
+          <div v-if="step.video" class="video-link">
+            <div class="video-play">▶</div>
+            <div>
+              <span class="video-title">{{ step.video }}</span>
+              <span class="video-sub">Tap to watch video tutorial</span>
+            </div>
+          </div>
+
+          <!-- Pro tip -->
+          <div v-if="step.tip" class="pro-tip">
+            <span class="tip-icon">💡</span>
+            <span><strong>Pro Tip:</strong> {{ step.tip }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom CTA -->
+    <div class="bottom-cta">
+      <button
+          class="mark-btn"
+          :style="{ background: skill.color }"
+          @click="markCompleted"
+      >
+        {{ allDone ? '✓ All Steps Done!' : 'Mark as Completed' }}
+      </button>
+    </div>
+
+  </div>
+</template>
+
+
 
 <style scoped>
 .detail-page {

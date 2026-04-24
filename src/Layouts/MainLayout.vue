@@ -135,7 +135,7 @@ watch(activeIndex, () => updateIndicator())
   transform: translateY(-55%);
   width: 48px;
   height: 48px;
-  background: #2e7d32;
+  background: var(--indevo-green-gradiant);
   border-radius: 50%;
   transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 14px rgba(46,125,50,0.4);

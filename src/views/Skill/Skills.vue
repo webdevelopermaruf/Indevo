@@ -1,3 +1,81 @@
+<script setup>
+import {ref, computed, onMounted} from 'vue'
+import {useSkillStore} from "@/stores/skill.store.js";
+import {colorForSkill} from "@/services/skillcolor.service.js";
+
+const activeCategory = ref('all')
+
+const categories = [
+  {
+    value: 'all',
+    emoji: '⚡',
+    label: 'ALL',
+    children: []
+  },
+  {
+    value: 'living',
+    emoji: '🏠',
+    label: 'LIVING',
+    children: [
+      { value: 'Living',            label: 'Living' },
+      { value: 'Health & Wellness', label: 'Health & Wellness' },
+      { value: 'Time Management',   label: 'Time Management' },
+      { value: 'Self-Awareness',    label: 'Self-Awareness' },
+    ],
+  },
+  {
+    value: 'finance',
+    emoji: '💰',
+    label: 'FINANCE',
+    children: [
+      { value: 'Financial Literacy', label: 'Financial Literacy' },
+    ],
+  },
+  {
+    value: 'career',
+    emoji: '💼',
+    label: 'CAREER',
+    children: [
+      { value: 'Career',            label: 'Career' },
+      { value: 'Communication',     label: 'Communication' },
+      { value: 'Digital',           label: 'Digital' },
+      { value: 'Critical Thinking', label: 'Critical Thinking' },
+      { value: 'Social',            label: 'Social' },
+    ],
+  },
+  {
+    value: 'hobby',
+    emoji: '🎨',
+    label: 'HOBBY',
+    children: [
+      { value: 'Other', label: 'Other' },
+    ],
+  },
+]
+
+
+
+const skillStore = useSkillStore()
+
+const normalize = (str) => String(str ?? '').toLowerCase().replace(/[\s&-]+/g, '_')
+
+const filteredSkills = computed(() => {
+  const allSkills = skillStore.data?.skills ?? []
+
+  if (activeCategory.value === 'all') return allSkills
+
+  const parent = categories.find(c => c.value === activeCategory.value)
+  if (!parent) return allSkills
+
+  const childValues = parent.children.map(c => normalize(c.value))
+  return allSkills.filter(s => childValues.includes(normalize(s.category)))
+})
+
+onMounted(async () => {
+  await skillStore.getSkills();
+})
+</script>
+
 <template>
   <div class="skills-page">
 
@@ -39,20 +117,6 @@
           <span>2,000 XP — Level 8</span>
         </div>
       </div>
-
-      <!-- Achievement Badges -->
-      <div class="badges-row">
-        <div class="badge-pill gold">
-          <span>🔍</span> Chef Starter
-        </div>
-        <div class="badge-pill gold">
-          <span>💰</span> Money Wise
-        </div>
-        <div class="badge-pill grey">
-          <span>🪣</span> Clean Sweep
-        </div>
-      </div>
-
       <!-- Category Filter -->
       <div class="category-row">
         <button
@@ -73,22 +137,22 @@
       <div class="skills-list">
         <div
             v-for="skill in filteredSkills" :key="skill.id"
-            class="skill-card"
+            class="skill-card mb-4"
             @click="$router.push('/skills/' + skill.id)"
         >
           <!-- Banner -->
-          <div class="skill-banner" :style="{ background: skill.color }">
-            <span class="skill-banner-emoji">{{ skill.emoji }}</span>
+            <div class="skill-banner" :style="{ background: colorForSkill(skill) }">
+            <span class="skill-banner-emoji">{{ skill.poster }}</span>
           </div>
 
           <!-- Body -->
           <div class="skill-body">
             <div class="skill-body-top">
               <div>
-                <h3 class="skill-name">{{ skill.name }}</h3>
-                <span class="skill-cat-tag">{{ skill.category.toUpperCase() }}</span>
+                <h3 class="skill-name">{{ skill.title }}</h3>
+                <span class="skill-cat-tag">{{ skill.category.toUpperCase() ?? '' }}</span>
               </div>
-              <span class="skill-difficulty" :class="skill.difficulty.toLowerCase()">
+              <span class="skill-difficulty" :class="skill.difficulty?.toLowerCase()">
                 <span class="diff-dot"></span> {{ skill.difficulty }}
               </span>
             </div>
@@ -97,7 +161,7 @@
               <div class="skill-stat-chip">
                 <span>⭐</span>
                 <div>
-                  <span class="chip-val">{{ skill.xp }} XP</span>
+                  <span class="chip-val">{{ skill.reward }} XP</span>
                   <span class="chip-sub">Reward</span>
                 </div>
               </div>
@@ -111,21 +175,13 @@
               <div class="skill-stat-chip">
                 <span>📋</span>
                 <div>
-                  <span class="chip-val">{{ skill.steps }} steps</span>
+                  <span class="chip-val">{{ skill.steps_count }} steps</span>
                   <span class="chip-sub">Guide</span>
                 </div>
               </div>
             </div>
 
-            <div class="skill-progress-row">
-              <span class="skill-lv">Lv {{ skill.currentLv }}/{{ skill.maxLv }}</span>
-              <div class="skill-prog-bar">
-                <div class="skill-prog-fill" :style="{ width: skill.progress + '%', background: skill.color }"></div>
-              </div>
-              <span class="skill-pct">{{ skill.progress }}%</span>
-            </div>
-
-            <button class="start-btn" :style="{ background: skill.color }">
+            <button class="start-btn" :style="{ background: colorForSkill(skill) }">
               → Start Learning
             </button>
           </div>
@@ -135,84 +191,7 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue'
 
-const activeCategory = ref('all')
-
-const categories = [
-  { value: 'all',      emoji: '⚡',  label: 'ALL' },
-  { value: 'cooking',  emoji: '🔍',  label: 'COOKING' },
-  { value: 'finance',  emoji: '💰',  label: 'FINANCE' },
-  { value: 'cleaning', emoji: '🧹',  label: 'CLEANING' },
-  { value: 'admin',    emoji: '📋',  label: 'ADMIN' },
-]
-
-const skills = ref([
-  {
-    id: 'perfect-pasta',
-    name: 'Perfect Pasta',
-    category: 'cooking',
-    emoji: '🍝',
-    color: '#d4501a',
-    difficulty: 'Easy',
-    xp: 20,
-    duration: '15 min',
-    steps: 4,
-    currentLv: 3,
-    maxLv: 5,
-    progress: 60,
-  },
-  {
-    id: 'monthly-budget',
-    name: 'Monthly Budget',
-    category: 'finance',
-    emoji: '💵',
-    color: '#2e7d32',
-    difficulty: 'Medium',
-    xp: 40,
-    duration: '30 min',
-    steps: 5,
-    currentLv: 2,
-    maxLv: 5,
-    progress: 40,
-  },
-  {
-    id: 'deep-clean',
-    name: 'Deep Clean Home',
-    category: 'cleaning',
-    emoji: '🧽',
-    color: '#0277bd',
-    difficulty: 'Easy',
-    xp: 25,
-    duration: '20 min',
-    steps: 6,
-    currentLv: 1,
-    maxLv: 5,
-    progress: 20,
-  },
-  {
-    id: 'tax-basics',
-    name: 'Tax Basics',
-    category: 'admin',
-    emoji: '📑',
-    color: '#6a1b9a',
-    difficulty: 'Hard',
-    xp: 60,
-    duration: '45 min',
-    steps: 7,
-    currentLv: 0,
-    maxLv: 5,
-    progress: 0,
-  },
-])
-
-const filteredSkills = computed(() =>
-    activeCategory.value === 'all'
-        ? skills.value
-        : skills.value.filter(s => s.category === activeCategory.value)
-)
-</script>
 
 <style scoped>
 .skills-page {
@@ -236,7 +215,7 @@ const filteredSkills = computed(() =>
 
 /* XP Card */
 .xp-card {
-  background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+  background: var(--indevo-green-gradiant);
   border-radius: 20px; padding: 1.25rem;
 }
 .xp-card-top { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
@@ -263,7 +242,7 @@ const filteredSkills = computed(() =>
 .badge-pill.grey { background: #f3f4f6; color: #9ca3af; border: 1.5px solid #e5e7eb; }
 
 /* Category Row */
-.category-row { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 2px; }
+.category-row { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 2px; justify-content: space-between; align-items: center; }
 .cat-tile {
   display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
   padding: 0.6rem 0.75rem; border-radius: 14px;
@@ -272,7 +251,7 @@ const filteredSkills = computed(() =>
   transition: all 0.2s;
   min-width: 64px;
 }
-.cat-tile.active { background: #2e7d32; border-color: #2e7d32; }
+.cat-tile.active { background: var(--indevo-green-mid); border-color: var(--indevo-green-mid); }
 .cat-emoji { font-size: 1.2rem; }
 .cat-lbl { font-size: 0.6rem; font-weight: 700; color: #6b7280; letter-spacing: 0.04em; }
 .cat-tile.active .cat-lbl { color: #fff; }
@@ -317,7 +296,7 @@ const filteredSkills = computed(() =>
 .skill-difficulty {
   display: flex; align-items: center; gap: 0.3rem;
   font-size: 0.8rem; font-weight: 700; padding: 0.25rem 0.75rem;
-  border-radius: 999px; background: #e8f5e9; color: #2e7d32; flex-shrink: 0;
+  border-radius: 999px; background: #e8f5e9; color: var(--indevo-green); flex-shrink: 0;
 }
 .skill-difficulty.medium { background: #fff8e1; color: #b45309; }
 .skill-difficulty.hard { background: #fce4ec; color: #c62828; }
