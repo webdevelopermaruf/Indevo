@@ -7,6 +7,7 @@ export const useAuthStore = defineStore('auth', () => {
     const initialized = ref(null)
     const user = ref(null)
     const accessToken = ref(null)
+    const xp = ref(null)
 
     const loading = ref(false)
     const error = ref(null)
@@ -41,17 +42,29 @@ export const useAuthStore = defineStore('auth', () => {
         error.value = null
     }
 
+    async function fetchXp() {
+        try {
+            const res = await api.get('/user/me')
+            if (res.data.success === true) {
+                xp.value = res.data.data.xp
+            }
+        } catch (err) {
+            console.error('Failed to fetch XP', err)
+        }
+    }
+
     async function initAuth() {
         clearError()
         try {
             const res = await api.post('/auth/refresh')
             accessToken.value = res.data.data.access_token
             user.value = res.data.data.user
+            await fetchXp()
         } catch (err) {
             user.value = null
             accessToken.value = null
         } finally {
-            initialized.value = true  // ← always mark done, success or fail
+            initialized.value = true
         }
     }
 
@@ -66,6 +79,7 @@ export const useAuthStore = defineStore('auth', () => {
             if (response.data.success === true) {
                 accessToken.value = response.data.data.access_token
                 user.value = response.data.data.user
+                await fetchXp()
                 await router.push({ name: 'Dashboard' })
             } else {
                 setError(response.data.message)
@@ -88,8 +102,8 @@ export const useAuthStore = defineStore('auth', () => {
             if (response.data.success === true) {
                 return true;
             }else{
-                return false;
                 setError('Something went wrong. Please try again.')
+                return false;
             }
         }catch(err){
             setError('Something went wrong. Please try again.')
@@ -158,7 +172,8 @@ export const useAuthStore = defineStore('auth', () => {
             console.error('Logout request failed', err)
         } finally {
             user.value = null
-            accessToken.value = null;
+            accessToken.value = null
+            xp.value = null
             await router.push('/login')
         }
     }
@@ -212,7 +227,8 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     return {
-        user, accessToken, loading, error, registerData, LoginData, initAuth,forgotPassword,
-        login, register, logout, verify, verifyCode, initialized, passwordChange, nameChange, preferenceChange
+        user, accessToken, loading, error, registerData, LoginData, initAuth, forgotPassword,
+        login, register, logout, verify, verifyCode, initialized, passwordChange, nameChange,
+        preferenceChange, xp, fetchXp
     }
 })

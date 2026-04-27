@@ -1,78 +1,79 @@
 <script setup>
 import {ref, computed, onMounted} from 'vue'
 import {useSkillStore} from "@/stores/skill.store.js";
+import {useAuthStore} from "@/stores/auth.store.js";
 import {colorForSkill} from "@/services/skillcolor.service.js";
 
 const activeCategory = ref('all')
+const skillStore = useSkillStore()
+const authStore = useAuthStore()
 
 const categories = [
+  { value: 'all',     emoji: '⚡', label: 'ALL',     children: [] },
   {
-    value: 'all',
-    emoji: '⚡',
-    label: 'ALL',
-    children: []
-  },
-  {
-    value: 'living',
-    emoji: '🏠',
-    label: 'LIVING',
+    value: 'living',  emoji: '🏠', label: 'LIVING',
     children: [
-      { value: 'Living',            label: 'Living' },
-      { value: 'Health & Wellness', label: 'Health & Wellness' },
-      { value: 'Time Management',   label: 'Time Management' },
-      { value: 'Self-Awareness',    label: 'Self-Awareness' },
+      { value: 'Living' },
+      { value: 'Health & Wellness' },
+      { value: 'Time Management' },
+      { value: 'Self-Awareness' },
     ],
   },
   {
-    value: 'finance',
-    emoji: '💰',
-    label: 'FINANCE',
+    value: 'finance', emoji: '💰', label: 'FINANCE',
+    children: [{ value: 'Financial Literacy' }],
+  },
+  {
+    value: 'career',  emoji: '💼', label: 'CAREER',
     children: [
-      { value: 'Financial Literacy', label: 'Financial Literacy' },
+      { value: 'Career' },
+      { value: 'Communication' },
+      { value: 'Digital' },
+      { value: 'Critical Thinking' },
+      { value: 'Social' },
     ],
   },
   {
-    value: 'career',
-    emoji: '💼',
-    label: 'CAREER',
-    children: [
-      { value: 'Career',            label: 'Career' },
-      { value: 'Communication',     label: 'Communication' },
-      { value: 'Digital',           label: 'Digital' },
-      { value: 'Critical Thinking', label: 'Critical Thinking' },
-      { value: 'Social',            label: 'Social' },
-    ],
-  },
-  {
-    value: 'hobby',
-    emoji: '🎨',
-    label: 'HOBBY',
-    children: [
-      { value: 'Other', label: 'Other' },
-    ],
+    value: 'hobby',   emoji: '🎨', label: 'HOBBY',
+    children: [{ value: 'Other' }],
   },
 ]
 
+// XP computed values from auth store
+const xpData = computed(() => authStore.xp)
+const totalXp = computed(() => xpData.value?.total_xp ?? 0)
+const level = computed(() => xpData.value?.level ?? 1)
+const levelName = computed(() => xpData.value?.level_name ?? 'Beginner')
+const currentLevelXp = computed(() => xpData.value?.current_level_xp ?? 0)
+const nextLevelXp = computed(() => xpData.value?.next_level_xp ?? 100)
+const xpProgress = computed(() => {
+  const range = nextLevelXp.value - currentLevelXp.value
+  const earned = totalXp.value - currentLevelXp.value
+  return range > 0 ? Math.min((earned / range) * 100, 100) : 0
+})
 
-
-const skillStore = useSkillStore()
+const levelBadge = computed(() => {
+  if (level.value >= 10) return '👑'
+  if (level.value >= 8)  return '🏆'
+  if (level.value >= 6)  return '🥇'
+  if (level.value >= 4)  return '🥈'
+  return '🏅'
+})
 
 const normalize = (str) => String(str ?? '').toLowerCase().replace(/[\s&-]+/g, '_')
 
 const filteredSkills = computed(() => {
   const allSkills = skillStore.data?.skills ?? []
-
   if (activeCategory.value === 'all') return allSkills
-
   const parent = categories.find(c => c.value === activeCategory.value)
   if (!parent) return allSkills
-
   const childValues = parent.children.map(c => normalize(c.value))
   return allSkills.filter(s => childValues.includes(normalize(s.category)))
 })
 
 onMounted(async () => {
-  await skillStore.getSkills();
+  await skillStore.getSkills()
+  await authStore.fetchXp()
 })
 </script>
 
@@ -96,27 +97,28 @@ onMounted(async () => {
       <div class="xp-card">
         <div class="xp-card-top">
           <div class="xp-badge-wrap">
-            <div class="xp-badge">🏅</div>
+            <div class="xp-badge">{{ levelBadge }}</div>
           </div>
           <div class="xp-info">
-            <span class="xp-level">Level 7</span>
-            <span class="xp-title">Skill Seeker</span>
+            <span class="xp-level">Level {{ level }}</span>
+            <span class="xp-title">{{ levelName }}</span>
           </div>
           <div class="xp-total-wrap">
-            <span class="xp-total-num">1,340</span>
+            <span class="xp-total-num">{{ totalXp.toLocaleString() }}</span>
             <span class="xp-total-lbl">TOTAL XP</span>
           </div>
         </div>
         <div class="xp-bar-wrap">
           <div class="xp-bar">
-            <div class="xp-bar-fill" style="width: 67%"></div>
+            <div class="xp-bar-fill" :style="{ width: xpProgress + '%' }"></div>
           </div>
         </div>
         <div class="xp-bar-labels">
-          <span>1,340 XP</span>
-          <span>2,000 XP — Level 8</span>
+          <span>{{ totalXp.toLocaleString() }} XP</span>
+          <span>{{ nextLevelXp.toLocaleString() }} XP — Level {{ level + 1 }}</span>
         </div>
       </div>
+
       <!-- Category Filter -->
       <div class="category-row">
         <button
@@ -141,8 +143,12 @@ onMounted(async () => {
             @click="$router.push('/skills/' + skill.id)"
         >
           <!-- Banner -->
-            <div class="skill-banner" :style="{ background: colorForSkill(skill) }">
+          <div class="skill-banner" :style="{ background: colorForSkill(skill) }">
             <span class="skill-banner-emoji">{{ skill.poster }}</span>
+            <!-- Completed overlay -->
+            <div v-if="skill.is_completed" class="completed-overlay">
+              <span class="completed-badge">✓ Completed</span>
+            </div>
           </div>
 
           <!-- Body -->
@@ -150,9 +156,12 @@ onMounted(async () => {
             <div class="skill-body-top">
               <div>
                 <h3 class="skill-name">{{ skill.title }}</h3>
-                <span class="skill-cat-tag">{{ skill.category.toUpperCase() ?? '' }}</span>
+                <span class="skill-cat-tag">{{ skill.category?.toUpperCase() ?? '' }}</span>
               </div>
-              <span class="skill-difficulty" :class="skill.difficulty?.toLowerCase()">
+              <span v-if="skill.is_completed" class="skill-difficulty completed-pill">
+                ✓ Done
+              </span>
+              <span v-else class="skill-difficulty" :class="skill.difficulty?.toLowerCase()">
                 <span class="diff-dot"></span> {{ skill.difficulty }}
               </span>
             </div>
@@ -168,7 +177,7 @@ onMounted(async () => {
               <div class="skill-stat-chip">
                 <span>⏱</span>
                 <div>
-                  <span class="chip-val">~{{ skill.duration }}</span>
+                  <span class="chip-val">~{{ skill.duration }} min</span>
                   <span class="chip-sub">Duration</span>
                 </div>
               </div>
@@ -181,17 +190,30 @@ onMounted(async () => {
               </div>
             </div>
 
-            <button class="start-btn" :style="{ background: colorForSkill(skill) }">
-              → Start Learning
+            <!-- Progress bar for partially completed skills -->
+            <div v-if="skill.completed_steps > 0 && !skill.is_completed" class="skill-progress-row">
+              <div class="skill-prog-bar">
+                <div
+                    class="skill-prog-fill"
+                    :style="{ width: (skill.completed_steps / skill.steps_count * 100) + '%', background: colorForSkill(skill) }"
+                ></div>
+              </div>
+              <span class="skill-pct">{{ skill.completed_steps }}/{{ skill.steps_count }}</span>
+            </div>
+
+            <button
+                class="start-btn"
+                :style="{ background: skill.is_completed ? '#2e7d32' : colorForSkill(skill) }"
+            >
+              {{ skill.is_completed ? '✓ Completed' : skill.completed_steps > 0 ? '→ Continue Learning' : '→ Start Learning' }}
             </button>
           </div>
         </div>
       </div>
+
     </div>
   </div>
 </template>
-
-
 
 <style scoped>
 .skills-page {
@@ -201,12 +223,10 @@ onMounted(async () => {
   padding-bottom: 100px;
 }
 
-/* Header */
 .page-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 1.25rem 1.25rem 0.75rem;
-  background: #f0f2ee;
-  border-bottom: 1px solid #e5e7e3;
+  background: #f0f2ee; border-bottom: 1px solid #e5e7e3;
 }
 .back-btn { background: none; border: none; cursor: pointer; color: #1a1a1a; padding: 0; display: flex; align-items: center; }
 .page-title { font-size: 1.1rem; font-weight: 700; color: #1a1a1a; }
@@ -214,10 +234,7 @@ onMounted(async () => {
 .page-body { padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
 
 /* XP Card */
-.xp-card {
-  background: var(--indevo-green-gradiant);
-  border-radius: 20px; padding: 1.25rem;
-}
+.xp-card { background: var(--indevo-green-gradiant); border-radius: 20px; padding: 1.25rem; }
 .xp-card-top { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
 .xp-badge-wrap { width: 52px; height: 52px; border-radius: 14px; background: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0; }
 .xp-info { flex: 1; display: flex; flex-direction: column; }
@@ -227,19 +244,9 @@ onMounted(async () => {
 .xp-total-num { font-size: 1.5rem; font-weight: 800; color: #69f0ae; }
 .xp-total-lbl { font-size: 0.65rem; font-weight: 600; color: rgba(255,255,255,0.6); letter-spacing: 0.05em; }
 .xp-bar { height: 8px; background: rgba(255,255,255,0.2); border-radius: 999px; overflow: hidden; }
-.xp-bar-fill { height: 100%; background: #69f0ae; border-radius: 999px; }
+.xp-bar-fill { height: 100%; background: #69f0ae; border-radius: 999px; transition: width 0.5s ease; }
 .xp-bar-labels { display: flex; justify-content: space-between; margin-top: 0.4rem; }
 .xp-bar-labels span { font-size: 0.72rem; color: rgba(255,255,255,0.65); }
-
-/* Badges */
-.badges-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.badge-pill {
-  display: flex; align-items: center; gap: 0.35rem;
-  padding: 0.4rem 1rem; border-radius: 999px;
-  font-size: 0.82rem; font-weight: 700;
-}
-.badge-pill.gold { background: #fff8e1; color: #b45309; border: 1.5px solid #fcd34d; }
-.badge-pill.grey { background: #f3f4f6; color: #9ca3af; border: 1.5px solid #e5e7eb; }
 
 /* Category Row */
 .category-row { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 2px; justify-content: space-between; align-items: center; }
@@ -248,15 +255,13 @@ onMounted(async () => {
   padding: 0.6rem 0.75rem; border-radius: 14px;
   background: #fff; border: 1.5px solid #e5e7e3;
   cursor: pointer; flex-shrink: 0; font-family: inherit;
-  transition: all 0.2s;
-  min-width: 64px;
+  transition: all 0.2s; min-width: 64px;
 }
 .cat-tile.active { background: var(--indevo-green-mid); border-color: var(--indevo-green-mid); }
 .cat-emoji { font-size: 1.2rem; }
 .cat-lbl { font-size: 0.6rem; font-weight: 700; color: #6b7280; letter-spacing: 0.04em; }
 .cat-tile.active .cat-lbl { color: #fff; }
 
-/* Section label */
 .section-lbl { font-size: 0.72rem; font-weight: 700; color: #6b7280; letter-spacing: 0.08em; margin: 0; }
 
 /* Skill Card */
@@ -269,24 +274,25 @@ onMounted(async () => {
 
 .skill-banner {
   height: 110px; display: flex;
-  align-items: center; justify-content: center;
-  position: relative;
+  align-items: center; justify-content: center; position: relative;
 }
 .skill-banner::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: repeating-linear-gradient(
-      45deg,
-      rgba(255,255,255,0.04) 0px,
-      rgba(255,255,255,0.04) 1px,
-      transparent 1px,
-      transparent 12px
-  );
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 1px, transparent 1px, transparent 12px);
 }
 .skill-banner-emoji { font-size: 3rem; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2)); }
 
-.skill-body { padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.completed-overlay {
+  position: absolute; inset: 0; background: rgba(0,0,0,0.3);
+  display: flex; align-items: center; justify-content: center; z-index: 2;
+}
+.completed-badge {
+  background: #fff; color: #2e7d32;
+  font-size: 0.85rem; font-weight: 800;
+  padding: 0.4rem 1.2rem; border-radius: 999px;
+}
 
+.skill-body { padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
 .skill-body-top { display: flex; align-items: flex-start; justify-content: space-between; }
 .skill-name { font-size: 1.1rem; font-weight: 800; color: #1a1a1a; margin-bottom: 4px; }
 .skill-cat-tag {
@@ -300,6 +306,7 @@ onMounted(async () => {
 }
 .skill-difficulty.medium { background: #fff8e1; color: #b45309; }
 .skill-difficulty.hard { background: #fce4ec; color: #c62828; }
+.completed-pill { background: #e8f5e9; color: #2e7d32; display: flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: 999px; flex-shrink: 0; }
 .diff-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 
 .skill-stats { display: flex; gap: 0.5rem; }
@@ -312,7 +319,6 @@ onMounted(async () => {
 .chip-sub { font-size: 0.65rem; color: #9ca3af; display: block; }
 
 .skill-progress-row { display: flex; align-items: center; gap: 0.5rem; }
-.skill-lv { font-size: 0.75rem; color: #6b7280; white-space: nowrap; }
 .skill-prog-bar { flex: 1; height: 6px; background: #e5e7e3; border-radius: 999px; overflow: hidden; }
 .skill-prog-fill { height: 100%; border-radius: 999px; }
 .skill-pct { font-size: 0.75rem; color: #6b7280; white-space: nowrap; }
@@ -321,8 +327,7 @@ onMounted(async () => {
   width: 100%; padding: 0.9rem;
   color: #fff; border: none; border-radius: 14px;
   font-size: 0.95rem; font-weight: 700; cursor: pointer;
-  font-family: inherit; letter-spacing: 0.02em;
-  transition: opacity 0.2s;
+  font-family: inherit; letter-spacing: 0.02em; transition: opacity 0.2s;
 }
 .start-btn:active { opacity: 0.85; }
 </style>

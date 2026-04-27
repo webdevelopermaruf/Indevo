@@ -16,6 +16,7 @@
 - SkillDetail page added
 - SkillMastered page added
 
+
 ### Fixed
 
 ### Changed

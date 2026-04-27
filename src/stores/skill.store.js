@@ -1,7 +1,6 @@
 import {defineStore} from "pinia";
 import api from "@/services/api.js";
 import {ref} from "vue";
-
 export const useSkillStore = defineStore('skill', () => {
     const loading = ref(false)
     const error = ref(null)
@@ -10,12 +9,9 @@ export const useSkillStore = defineStore('skill', () => {
     function setError(msg) {
         error.value = msg
     }
-
     function clearError() {
         error.value = null
     }
-
-
     async function getSkills() {
         clearError();
         loading.value = true
@@ -33,7 +29,6 @@ export const useSkillStore = defineStore('skill', () => {
             loading.value = false
         }
     }
-
     async function getSpecificSkills(id) {
         clearError();
         loading.value = true
@@ -51,11 +46,7 @@ export const useSkillStore = defineStore('skill', () => {
             loading.value = false
         }
     }
-
-
     return {
-        getSkills, getSpecificSkills, loading, error, data
+        getSkills, getSpecificSkills, loading, error, data, skilldata
     }
-
-
 });
