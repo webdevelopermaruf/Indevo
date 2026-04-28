@@ -15,14 +15,6 @@
     <!-- Date Row -->
     <div class="date-row">
       <span class="date-text">{{ todayDisplay }}</span>
-      <button class="cal-btn">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2"/>
-          <line x1="16" y1="2" x2="16" y2="6"/>
-          <line x1="8" y1="2" x2="8" y2="6"/>
-          <line x1="3" y1="10" x2="21" y2="10"/>
-        </svg>
-      </button>
     </div>
 
     <!-- My Goals Card -->
@@ -32,45 +24,28 @@
           <div class="goals-icon">🎯</div>
           <span class="goals-label">MY GOALS</span>
         </div>
-        <span class="view-all" @click="$router.push('/goals')">View all →</span>
       </div>
       <div class="goals-stats">
         <div class="goal-stat">
-          <span class="goal-num">{{ goalStats.total }}</span>
+          <span class="goal-num">{{ goals?.total }}</span>
           <span class="goal-sub">TOTAL</span>
         </div>
         <div class="goal-stat">
-          <span class="goal-num">{{ goalStats.pending }}</span>
+          <span class="goal-num">{{ goals?.pending }}</span>
           <span class="goal-sub">PENDING</span>
         </div>
         <div class="goal-stat">
-          <span class="goal-num faded">{{ goalStats.done }}</span>
+          <span class="goal-num faded">{{ goals?.completed }}</span>
           <span class="goal-sub">DONE ✓</span>
         </div>
       </div>
       <div class="progress-row">
         <span class="progress-label">Overall Progress</span>
-        <span class="progress-pct">{{ goalStats.pct }}% complete</span>
+        <span class="progress-pct">{{ goals?.percentage }}% complete</span>
       </div>
       <div class="progress-bar">
-        <div class="progress-fill" :style="{ width: goalStats.pct + '%' }"></div>
+        <div class="progress-fill" :style="{ width: goals?.percentage + '%' }"></div>
       </div>
-    </div>
-
-    <!-- Create New Goal -->
-    <div class="create-goal-row" @click="$router.push('/goals')">
-      <div class="create-goal-icon">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round">
-          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-      </div>
-      <div class="create-goal-text">
-        <span class="create-goal-title">Create New Goal</span>
-        <span class="create-goal-sub">Set a target with reminders & deadline</span>
-      </div>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round">
-        <polyline points="9 18 15 12 9 6"/>
-      </svg>
     </div>
 
     <!-- Filter Pills -->
@@ -246,17 +221,15 @@
                   <input v-model="form.time" type="time" class="text-input green-text" />
                 </div>
               </div>
-              <div class="field-group" style="flex:1">
+              <div class="field-group">
                 <label class="field-label">DATE</label>
                 <div class="input-box">
                   <span>📅</span>
                   <input
+                      style="max-width: 100%"
                       v-model="form.date"
-                      :type="dateFocused ? 'date' : 'text'"
-                      :placeholder="todayFormatted"
+                      type="date"
                       class="text-input"
-                      @focus="dateFocused = true"
-                      @blur="dateFocused = !!form.date"
                   />
                 </div>
               </div>
@@ -341,7 +314,6 @@ import { ref, computed, onMounted } from 'vue'
 import api from '@/services/api.js'
 
 const drawerOpen = ref(false)
-const dateFocused = ref(false)
 const activeFilter = ref('All')
 const loading = ref(false)
 const saving = ref(false)
@@ -349,7 +321,6 @@ const deleteReminderConfirm = ref(null)
 
 const today = new Date()
 const todayDisplay = today.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })
-const todayFormatted = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
 const todayReminders = ref({})
 const upcomingReminders = ref({})
@@ -362,9 +333,22 @@ const filters = [
   { label: 'Task', icon: '✅' },
 ]
 
+const pad = (n) => String(n).padStart(2, '0')
+const now = new Date()
+
+const todayDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+console.log(todayDate)
+const currentTime = `${pad(now.getHours())}:${pad(now.getMinutes())}`
+console.log(now)
 const form = ref({
-  title: '', priority: 'Urgent', type: 'Task',
-  date: '', time: '', frequency: 'once', place: '', notes: ''
+  title: '',
+  priority: 'Urgent',
+  type: 'Task',
+  date: todayDate,
+  time: currentTime,
+  frequency: 'once',
+  place: '',
+  notes: ''
 })
 
 const types = [
@@ -377,7 +361,6 @@ const freqOptions = [
   { label: 'One-time', value: 'once' },
   { label: 'Daily',    value: 'daily' },
   { label: 'Weekly',   value: 'weekly' },
-  { label: 'Monthly',  value: 'monthly' },
 ]
 
 // ── Helpers ────────────────────────────────────────────────
@@ -402,15 +385,6 @@ function priorityPillClass(p) { return p === 'high' ? 'urgent' : p === 'medium' 
 function priorityColor(p) { return p === 'high' ? '#ef4444' : p === 'medium' ? '#f59e0b' : '#22c55e' }
 function priorityBg(p) { return p === 'high' ? '#fee2e2' : p === 'medium' ? '#fff8e1' : '#f0fdf4' }
 function recurrenceLabel(val) { return freqOptions.find(r => r.value === val)?.label ?? val }
-
-// ── Goals stats ────────────────────────────────────────────
-const goalStats = computed(() => {
-  const total = goals.value.length
-  const done = goals.value.filter(g => g.is_completed).length
-  const pending = total - done
-  const pct = total ? Math.round((done / total) * 100) : 0
-  return { total, pending, done, pct }
-})
 
 // ── Filtering ──────────────────────────────────────────────
 function filterItems(items) {
@@ -613,8 +587,12 @@ onMounted(async () => {
 .delete-reminder-btn { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #fee2e2; border: none; color: #ef4444; cursor: pointer; transition: all 0.2s; }
 .delete-reminder-btn:hover { background: #fecaca; }
 
-.fab { position: fixed; bottom: 90px; right: calc(50% - 210px); width: 52px; height: 52px; border-radius: 16px; background: #2e7d32; color: #fff; font-size: 1.6rem; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(46,125,50,0.4); z-index: 50; }
-
+.fab { position: fixed; bottom: 110px; right: calc(50% - 200px); width: 52px; height: 52px; border-radius: 16px; background: #2e7d32; color: #fff; font-size: 1.6rem; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(46,125,50,0.4); z-index: 50; }
+@media screen and (max-width: 400px) {
+  .fab {
+    right: calc(50% - 160px);
+  }
+}
 /* Delete confirm */
 .confirm-sheet { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: #fff; border-radius: 24px 24px 0 0; z-index: 201; }
 .confirm-body { padding: 1.5rem 1.25rem 2rem; display: flex; flex-direction: column; align-items: center; gap: 0.75rem; text-align: center; }
@@ -674,4 +652,8 @@ onMounted(async () => {
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 .slide-up-enter-active, .slide-up-leave-active { transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
 .slide-up-enter-from, .slide-up-leave-to { transform: translateX(-50%) translateY(100%); }
+.bottom-sheet, .confirm-sheet{
+  font-family: 'Nunito', 'Segoe UI', sans-serif;
+}
+
 </style>

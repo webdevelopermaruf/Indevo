@@ -1,6 +1,7 @@
 <template>
-  <div class="dashboard">
 
+  <div class="dashboard">
+    <Installable/>
     <!-- Header -->
     <div class="header">
       <div class="greeting">
@@ -16,21 +17,21 @@
         <span class="balance-label">TOTAL SPENT THIS MONTH</span>
         <span class="balance-date">{{ currentMonthLabel }}</span>
       </div>
-      <h2 class="balance-amount">{{ currency }}{{ totalSpent.toFixed(2) }}</h2>
+      <h2 class="balance-amount">{{ getSymbol('') }}{{ expenseStore.data?.dashboard_expense?.total_spent }}</h2>
       <div class="balance-stats">
         <div class="stat">
           <span class="stat-label">🍔 Food</span>
-          <span class="stat-value">{{ currency }}{{ breakdown.food?.amount?.toFixed(2) ?? '0.00' }}</span>
+          <span class="stat-value">{{ getSymbol('') }}{{ breakdown.food?.amount?.toFixed(2) ?? '0.00' }}</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat">
           <span class="stat-label">🚗 Transport</span>
-          <span class="stat-value">{{ currency }}{{ breakdown.transport?.amount?.toFixed(2) ?? '0.00' }}</span>
+          <span class="stat-value">{{ getSymbol('') }}{{ breakdown.transport?.amount?.toFixed(2) ?? '0.00' }}</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat">
           <span class="stat-label">⚡ Bills</span>
-          <span class="stat-value">{{ currency }}{{ breakdown.bills?.amount?.toFixed(2) ?? '0.00' }}</span>
+          <span class="stat-value">{{ getSymbol('') }}{{ breakdown.bills?.amount?.toFixed(2) ?? '0.00' }}</span>
         </div>
       </div>
     </div>
@@ -39,29 +40,23 @@
     <div class="section">
       <h2 class="section-title">Quick Actions</h2>
       <div class="quick-actions">
-        <div class="action-item" @click="expenseDrawerOpen = true">
+        <div class="action-item" @click="drawerOpen = true">
           <div class="action-icon" style="background: #e8f5e9;">
             <span style="color: #7c3aed; font-size: 1.5rem;">💳</span>
           </div>
           <span class="action-label">Add Expense</span>
         </div>
-        <div class="action-item" @click="$router.push('/notifications')">
+        <div class="action-item" @click="$router.push('/reminders')">
           <div class="action-icon" style="background: #fff8e1;">
             <span style="font-size: 1.5rem;">🔔</span>
           </div>
           <span class="action-label">Reminder</span>
         </div>
-        <div class="action-item" @click="$router.push('/goals')">
+        <div class="action-item" @click="$router.push('/skills')">
           <div class="action-icon" style="background: #f3e8ff;">
             <span style="font-size: 1.5rem;">🎯</span>
           </div>
-          <span class="action-label">New Goal</span>
-        </div>
-        <div class="action-item" @click="$router.push('/expenses')">
-          <div class="action-icon" style="background: #fce4ec;">
-            <span style="font-size: 1.5rem;">📊</span>
-          </div>
-          <span class="action-label">Analytics</span>
+          <span class="action-label">New Skill</span>
         </div>
       </div>
     </div>
@@ -92,125 +87,38 @@
         </div>
       </div>
     </div>
-
-    <!-- Goals Summary -->
-    <div class="section" style="margin-top:1.5rem">
-      <div class="section-header">
-        <h2 class="section-title">My Goals</h2>
-        <span class="see-all" @click="$router.push('/goals')">See all →</span>
-      </div>
-      <div v-if="pendingGoals.length === 0" class="no-expenses">
-        <span>No pending goals</span>
-      </div>
-      <div v-else class="goals-summary">
-        <div v-for="goal in pendingGoals.slice(0, 3)" :key="goal.id" class="goal-summary-item">
-          <div class="goal-summary-emoji">{{ getGoalEmoji(goal.category) }}</div>
-          <div class="goal-summary-info">
-            <span class="goal-summary-name">{{ goal.title }}</span>
-            <span class="goal-summary-date">📅 {{ formatExpenseDate(goal.deadline_date) }}</span>
-          </div>
-          <span class="goal-summary-tag">{{ goal.category }}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Add Expense Bottom Sheet -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="expenseDrawerOpen" class="sheet-overlay" @click.self="expenseDrawerOpen = false"></div>
-      </Transition>
-      <Transition name="slide-up">
-        <div v-if="expenseDrawerOpen" class="bottom-sheet">
-          <div class="drawer-handle"></div>
-          <div class="drawer-header">
-            <h2 class="drawer-title">Add Expense</h2>
-          </div>
-          <div class="drawer-body">
-
-            <div class="field-group">
-              <label class="field-label">DESCRIPTION</label>
-              <div class="input-box">
-                <span>📝</span>
-                <input v-model="expenseForm.description" placeholder="Ex. Coffee, Train Fare..." class="text-input" />
-              </div>
-            </div>
-
-            <div class="field-group">
-              <label class="field-label">AMOUNT</label>
-              <div class="input-box amount-box">
-                <span class="currency-sym">{{ currency }}</span>
-                <input v-model="expenseForm.amount" type="number" placeholder="0.00" class="amount-input" />
-              </div>
-            </div>
-
-            <div class="field-group">
-              <label class="field-label">CATEGORY</label>
-              <div class="category-grid">
-                <button
-                    v-for="cat in categories" :key="cat.value"
-                    class="cat-btn"
-                    :class="{ selected: expenseForm.category === cat.value }"
-                    @click="expenseForm.category = cat.value"
-                >
-                  <span>{{ cat.icon }}</span> {{ cat.label }}
-                </button>
-              </div>
-            </div>
-
-            <div class="field-group">
-              <label class="field-label">DATE</label>
-              <div class="input-box">
-                <span>📅</span>
-                <input
-                    v-model="expenseForm.expense_date"
-                    :type="dateFocused ? 'date' : 'text'"
-                    :placeholder="todayFormatted"
-                    class="text-input"
-                    @focus="dateFocused = true"
-                    @blur="dateFocused = !!expenseForm.expense_date"
-                />
-              </div>
-            </div>
-
-            <div class="field-group">
-              <label class="field-label">RECURRING</label>
-              <div class="input-box select-box">
-                <span>🔄</span>
-                <div class="recurring-content">
-                  <span class="recurring-title">{{ recurringOptions.find(r => r.value === expenseForm.recurring_type)?.label || 'One-time' }}</span>
-                  <span class="recurring-sub">Tap to set frequency</span>
-                </div>
-                <select v-model="expenseForm.recurring_type" class="hidden-select">
-                  <option v-for="r in recurringOptions" :key="r.value" :value="r.value">{{ r.label }}</option>
-                </select>
-                <span class="dropdown-arrow">▾</span>
-              </div>
-            </div>
-
-            <div class="field-group">
-              <label class="field-label">NOTES <span class="optional">(optional)</span></label>
-              <div class="input-box textarea-box">
-                <textarea v-model="expenseForm.note" placeholder="Add any extra notes..." class="notes-input"></textarea>
-              </div>
-            </div>
-
-            <button class="save-btn" :disabled="savingExpense" @click="handleExpenseSave">
-              {{ savingExpense ? 'Saving...' : 'Save Expense' }}
-            </button>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
-
   </div>
+  <AddExpense v-model="drawerOpen" />
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth.store.js'
 import api from '@/services/api.js'
+import Installable from "@/installation/Installable.vue";
+import AddExpense from "@/Components/AddExpense.vue";
+import {useExpenseStore} from "@/stores/expense.store.js";
+import {getSymbol} from "@/services/currency.service.js";
 
 const authStore = useAuthStore()
+const drawerOpen = ref(false)
+
+const types = [
+  { icon: '✅', label: 'Task' },
+  { icon: '🔄', label: 'Routine' },
+  { icon: '👥', label: 'Social' },
+]
+
+const freqOptions = [
+  { label: 'One-time', value: 'once' },
+  { label: 'Daily',    value: 'daily' },
+  { label: 'Weekly',   value: 'weekly' },
+]
+
+const expenseStore = useExpenseStore()
+const recentExpenses = computed(() => expenseStore.data?.recent_expenses ?? []);
+const breakdown = computed(() => expenseStore.data?.dashboard_expense?.breakdown ?? {});
+
 
 // ── User data ──────────────────────────────────────────────
 const fullName = computed(() => {
@@ -241,41 +149,8 @@ const currentMonthLabel = new Date().toLocaleDateString('en-GB', { month: 'short
 
 // ── Expenses data ──────────────────────────────────────────
 const loadingExpenses = ref(false)
-const totalSpent = ref(0)
-const breakdown = ref({})
-const recentExpenses = ref([])
 const goals = ref([])
 
-const pendingGoals = computed(() => goals.value.filter(g => !g.is_completed))
-
-// ── Dates ──────────────────────────────────────────────────
-const today = new Date()
-const todayFormatted = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-const todayISO = today.toISOString().split('T')[0]
-
-// ── Forms ──────────────────────────────────────────────────
-const expenseDrawerOpen = ref(false)
-const dateFocused = ref(false)
-const savingExpense = ref(false)
-
-const expenseForm = ref({
-  description: '', amount: '', category: 'food',
-  expense_date: todayISO, recurring_type: 'once', note: ''
-})
-
-const categories = [
-  { icon: '🍔', label: 'Food',        value: 'food' },
-  { icon: '🚗', label: 'Transport',   value: 'transport' },
-  { icon: '⚡', label: 'Bills',       value: 'bills' },
-  { icon: '🎬', label: 'Entertain',   value: 'entertainment' },
-  { icon: '💊', label: 'Health',      value: 'health' },
-  { icon: '✨', label: 'Other',       value: 'other' },
-]
-
-const recurringOptions = [
-  { label: 'One-time', value: 'once' },
-  { label: 'Monthly',  value: 'monthly' },
-]
 
 // ── Helpers ────────────────────────────────────────────────
 function categoryEmoji(cat) {
@@ -293,27 +168,7 @@ function formatExpenseDate(date) {
   return new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
-function getGoalEmoji(category) {
-  const map = { health: '💪', learning: '📚', career: '💼', finance: '💰', personal: '🌱', other: '✨' }
-  return map[category] ?? '🎯'
-}
 
-// ── API ────────────────────────────────────────────────────
-async function fetchExpenses() {
-  loadingExpenses.value = true
-  try {
-    const res = await api.get('/user/expenses')
-    if (res.data.success) {
-      totalSpent.value   = res.data.data.dashboard_expense.total_spent ?? 0
-      breakdown.value    = res.data.data.dashboard_expense.breakdown ?? {}
-      recentExpenses.value = res.data.data.recent_expenses ?? []
-    }
-  } catch (e) {
-    console.error('Failed to load expenses', e)
-  } finally {
-    loadingExpenses.value = false
-  }
-}
 
 async function fetchGoals() {
   try {
@@ -324,31 +179,9 @@ async function fetchGoals() {
   }
 }
 
-async function handleExpenseSave() {
-  if (!expenseForm.value.description || !expenseForm.value.amount) return
-  savingExpense.value = true
-  try {
-    await api.post('/user/expense', {
-      description:    expenseForm.value.description,
-      category:       expenseForm.value.category,
-      amount:         expenseForm.value.amount,
-      currency:       authStore.user?.currency ?? 'GBP',
-      expense_date:   expenseForm.value.expense_date || todayISO,
-      recurring_type: expenseForm.value.recurring_type,
-      note:           expenseForm.value.note || null,
-    })
-    expenseDrawerOpen.value = false
-    expenseForm.value = { description: '', amount: '', category: 'food', expense_date: todayISO, recurring_type: 'once', note: '' }
-    await fetchExpenses()
-  } catch (e) {
-    console.error('Failed to save expense', e)
-  } finally {
-    savingExpense.value = false
-  }
-}
 
 onMounted(async () => {
-  await fetchExpenses()
+  await expenseStore.getExpenses();
   await fetchGoals()
 })
 </script>
@@ -363,7 +196,7 @@ onMounted(async () => {
 
 /* Header */
 .header {
-  background: linear-gradient(160deg, #2e7d32 0%, #1b5e20 100%);
+  background: var(--indevo-green-gradiant);
   padding: 3rem 1.5rem 6rem;
   display: flex; justify-content: space-between; align-items: flex-start;
 }
@@ -375,7 +208,7 @@ onMounted(async () => {
 .balance-card {
   border-radius: 20px; padding: 1.25rem 1.5rem;
   margin: -4rem 1.25rem 1.5rem;
-  background: rgba(0,0,0,0.15);
+  background: rgb(0 0 0 / 40%);
   border: 1px solid rgba(255,255,255,0.2);
   backdrop-filter: blur(10px);
 }
@@ -410,14 +243,6 @@ onMounted(async () => {
 .expense-date { font-size: 0.72rem; color: #9ca3af; }
 .expense-amount { font-size: 0.95rem; font-weight: 800; color: #ef4444; }
 
-/* Goals Summary */
-.goals-summary { display: flex; flex-direction: column; gap: 0.5rem; }
-.goal-summary-item { background: #fff; border-radius: 14px; padding: 0.85rem 1rem; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
-.goal-summary-emoji { font-size: 1.5rem; flex-shrink: 0; }
-.goal-summary-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-.goal-summary-name { font-size: 0.9rem; font-weight: 700; color: #1a1a1a; }
-.goal-summary-date { font-size: 0.72rem; color: #9ca3af; }
-.goal-summary-tag { font-size: 0.7rem; font-weight: 700; color: #2e7d32; background: #e8f5e9; padding: 0.2rem 0.6rem; border-radius: 999px; text-transform: capitalize; flex-shrink: 0; }
 
 /* Bottom Sheet */
 .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; }
@@ -461,4 +286,5 @@ onMounted(async () => {
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 .slide-up-enter-active, .slide-up-leave-active { transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
 .slide-up-enter-from, .slide-up-leave-to { transform: translateX(-50%) translateY(100%); }
+
 </style>

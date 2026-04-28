@@ -13,21 +13,21 @@ export const useAuthStore = defineStore('auth', () => {
     const error = ref(null)
     const router = useRouter();
     const registerData = ref({
-        email: 'marufmd5040@gmail.com',
-        firstName: 'Md',
-        lastName: 'Maruf',
-        dateOfBirth: '2004-11-08',
-        password: 'Sample@1234',
-        confirmPassword: 'Sample@1234',
-        monthlyIncome: '1000',
-        monthlyTargetSaving: '300',
+        email: '',
+        firstName: '',
+        lastName: '',
+        dateOfBirth: '',
+        password: '',
+        confirmPassword: '',
+        monthlyIncome: '',
+        monthlyTargetSaving: '',
         preferredCurrency: 'USD',
-        hobbies: 'Nothing'
+        hobbies: ''
     })
 
     const LoginData = reactive({
-        email: 'marufmd5040@gmail.com',
-        password: 'Sample@1234',
+        email: '',
+        password: '',
     })
 
     const verify = reactive({

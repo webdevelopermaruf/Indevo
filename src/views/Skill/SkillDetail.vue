@@ -120,7 +120,7 @@ onMounted(async () => {
 
     <!-- Loading state -->
     <div v-if="skillStore.loading" class="loading-wrap">
-      <span>Loading skill...</span>
+      <span>Loading Skill ...</span>
     </div>
 
     <!-- Error state -->
@@ -275,11 +275,6 @@ onMounted(async () => {
 }
 .toast-enter-active, .toast-leave-active { transition: all 0.3s ease; }
 .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-
-.loading-wrap, .error-wrap {
-  display: flex; align-items: center; justify-content: center;
-  min-height: 60vh; font-size: 1rem; color: #6b7280;
-}
 
 .page-header {
   display: flex; align-items: center; justify-content: space-between;

@@ -2,7 +2,7 @@
 <html lang="">
   <head>
     <meta charset="UTF-8">
-<!--    <link rel="icon" href="/favicon.ico">-->
+    <link rel="icon" href="/favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,21 +13,9 @@
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
     <script>
-        if(localStorage.getItem('onboarding') == 1){
-            
+        if(localStorage.getItem('onboarding') != 1 && window.location.pathname != '/onboarding'){
+            window.location.href = '/onboarding';
         }
     </script>
-    <style>
-        body.dark h1,
-        body.dark h2,
-        body.dark h3,
-        body.dark h4,
-        body.dark h5,
-        body.dark h6,
-        body.dark p,
-        body.dark span {
-            color: #fff;
-        }
-    </style>
   </body>
 </html>

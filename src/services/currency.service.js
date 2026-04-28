@@ -1,6 +1,6 @@
 import { useAuthStore } from "@/stores/auth.store.js";
 
-const currencies = [
+export const currencies = [
     { code: 'GBP', symbol: '£', name: 'British Pound' },
     { code: 'USD', symbol: '$', name: 'US Dollar' },
     { code: 'EUR', symbol: '€', name: 'Euro' },

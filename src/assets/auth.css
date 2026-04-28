@@ -10,7 +10,37 @@
     --indevo-text-muted: #6b7280;
     --indevo-radius: 12px;
     --indevo-input-radius: 10px;
+    --indevo-font-family: 'Nunito', 'Segoe UI', sans-serif;
+
 }
+
+/* Width */
+::-webkit-scrollbar {
+    width: 1px;
+    height: 1px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* Thumb */
+::-webkit-scrollbar-thumb {
+    background: white;
+}
+
+/* Thumb on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: white transparent;
+}
+
 
 * {
     margin: 0;
@@ -76,7 +106,10 @@ body {
     text-align: center;
     margin: 0 0 1.5rem;
 }
-
+.loading-wrap, .error-wrap {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 60vh; font-size: 1rem; color: #6b7280;
+}
 .field {
     margin-bottom: 1rem;
 }

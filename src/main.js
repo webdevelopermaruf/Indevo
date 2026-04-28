@@ -4,6 +4,7 @@ import PrimeVue from 'primevue/config'
 import Aura from '@primevue/themes/aura'
 import router from '@/router/index.js'
 import App from './App.vue'
+import './services/firebase.service.js'
 
 import 'primeicons/primeicons.css'
 import './assets/auth.css'

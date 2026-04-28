@@ -61,7 +61,7 @@ const indicatorLeft = ref(0)
 
 const navItems = [
   { path: '/expenses',      matches: ['/expenses', '/expenses/add'] },
-  { path: '/notifications', matches: ['/notifications', '/goals'] },
+  { path: '/reminders', matches: ['/reminders', '/goals'] },
   { path: '/',     matches: ['/'] },
   { path: '/skills',        matches: ['/skills'] },
   { path: '/settings',      matches: ['/settings'] },
@@ -74,7 +74,7 @@ const activeIndex = computed(() => {
   }
   // Check prefix matches for nested routes like /skills/:id
   if (route.path.startsWith('/skills')) return 3
-  if (route.path.startsWith('/notifications') || route.path.startsWith('/goals')) return 1
+  if (route.path.startsWith('/reminders') || route.path.startsWith('/goals')) return 1
   if (route.path.startsWith('/expenses')) return 0
   // Default to Home
   return 2

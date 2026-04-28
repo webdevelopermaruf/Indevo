@@ -1,71 +1,15 @@
-<template>
-  <div class="mastered-page">
-
-    <!-- Header -->
-    <div class="page-header">
-      <button class="back-btn" @click="$router.push('/skills')">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="15 18 9 12 15 6"/>
-        </svg>
-      </button>
-      <h1 class="page-title">{{ skill.name }}</h1>
-      <div style="width:32px"></div>
-    </div>
-
-    <!-- Confetti particles -->
-    <div class="confetti-wrap" aria-hidden="true">
-      <span v-for="i in 18" :key="i" class="confetti-dot" :style="confettiStyle(i)"></span>
-    </div>
-
-    <!-- Content -->
-    <div class="mastered-body">
-      <div class="party-icon">🎉</div>
-      <h2 class="mastered-title">Skill Mastered!</h2>
-      <p class="mastered-sub">You've mastered "{{ skill.name }}"! Your skills are growing every day.</p>
-
-      <!-- XP earned pill -->
-      <div class="xp-earned">
-        <span>⭐</span>
-        <span>+{{ skill.xp }} XP Earned!</span>
-      </div>
-
-      <!-- Stats row -->
-      <div class="stats-row">
-        <div class="stat-chip">
-          <span class="stat-big">{{ skill.steps }}</span>
-          <span class="stat-label">STEPS DONE</span>
-        </div>
-        <div class="stat-chip">
-          <span class="stat-big">~{{ skill.duration }}</span>
-          <span class="stat-label-small">min</span>
-          <span class="stat-label">EST. TIME</span>
-        </div>
-        <div class="stat-chip">
-          <span class="stat-big">Lv {{ skill.level }}</span>
-          <span class="stat-label">SKILL LEVEL</span>
-        </div>
-      </div>
-
-      <!-- Back to Skills -->
-      <button class="back-skills-btn" @click="$router.push('/skills')">
-        ‹ Back to Skills
-      </button>
-    </div>
-
-  </div>
-</template>
-
 <script setup>
 import { useRoute } from 'vue-router'
+import {computed, onMounted} from "vue";
+import {useSkillStore} from "@/stores/skill.store.js";
 
 const route = useRoute()
+const skillsStore= useSkillStore();
 
-const skillsData = {
-  'perfect-pasta': { name: 'Perfect Pasta', xp: 20, steps: 4, duration: '15', level: 4 },
-  'monthly-budget': { name: 'Monthly Budget', xp: 40, steps: 5, duration: '30', level: 4 },
-  'deep-clean':     { name: 'Deep Clean Home', xp: 25, steps: 6, duration: '20', level: 2 },
-  'tax-basics':     { name: 'Tax Basics', xp: 60, steps: 7, duration: '45', level: 1 },
-}
+
+const skillsData = computed(() => {
+  return skillsStore.skilldata
+})
 
 const skill = skillsData[route.params.id] || skillsData['monthly-budget']
 
@@ -85,7 +29,62 @@ function confettiStyle(i) {
     animationDuration: (1.2 + (i % 4) * 0.3) + 's',
   }
 }
+
+onMounted(async() => {
+  await skillsStore.getSpecificSkills(route.params.id);
+
+})
 </script>
+<template>
+
+  <div v-if="skillsStore.loading" class="loading-wrap">
+    <span>Loading Report...</span>
+  </div>
+
+  <div v-else class="mastered-page">
+
+
+    <!-- Confetti particles -->
+    <div class="confetti-wrap" aria-hidden="true">
+      <span v-for="i in 18" :key="i" class="confetti-dot" :style="confettiStyle(i)"></span>
+    </div>
+
+    <!-- Content -->
+    <div class="mastered-body">
+      <div class="party-icon">🎉</div>
+      <h2 class="mastered-title">Skill Mastered!</h2>
+      <p class="mastered-sub">You've mastered "{{skillsData?.title}}"! Your skills are growing every day.</p>
+
+      <!-- XP earned pill -->
+      <div class="xp-earned">
+        <span>⭐</span>
+        <span>+{{skillsData?.reward}} XP  Earned!</span>
+      </div>
+
+      <!-- Stats row -->
+      <div class="stats-row">
+        <div class="stat-chip">
+          <span class="stat-big">{{ skillsData?.steps.length }}</span>
+          <span class="stat-label">STEPS DONE</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-big">~{{ skillsData?.duration }} min</span>
+          <span class="stat-label">EST. TIME</span>
+        </div>
+        <div class="stat-chip">
+          <span class="stat-big" style="text-transform: capitalize">{{ skillsData?.difficulty }}</span>
+          <span class="stat-label">SKILL LEVEL</span>
+        </div>
+      </div>
+
+      <!-- Back to Skills -->
+      <button class="btn-primary" @click="$router.push('/skills')">
+        ‹ Back to Skills
+      </button>
+    </div>
+
+  </div>
+</template>
 
 <style scoped>
 .mastered-page {

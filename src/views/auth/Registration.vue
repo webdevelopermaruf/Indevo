@@ -96,7 +96,7 @@
         <div class="field">
           <InputText
               v-model="authStore.registerData.dateOfBirth"
-              type="date"
+              :type="authStore.registerData.dateOfBirth ? 'date' : 'text'"
               placeholder="Date of Birth"
               class="custom-input"
               @focus="dateFieldFocused = true"

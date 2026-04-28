@@ -2,6 +2,11 @@
 import {ref, computed, onMounted} from 'vue'
 import { useThemeStore } from '@/stores/theme.store.js'
 import {useAuthStore} from "@/stores/auth.store.js";
+import {currencies} from "@/services/currency.service.js";
+import { useFcm } from '@/composables/useFcm';
+
+const { registerForNotifications } = useFcm();
+
 
 const auth = useAuthStore()
 const themeStore = useThemeStore()
@@ -11,13 +16,6 @@ const prefs = ref({ currency: auth.user.currency ?? 'GBP', dark_mode: darkMode.v
 
 const isCurrencyOpen = ref(false)
 
-const currencies = [
-  { code: 'GBP', symbol: '£', name: 'British Pound' },
-  { code: 'USD', symbol: '$', name: 'US Dollar' },
-  { code: 'EUR', symbol: '€', name: 'Euro' },
-  { code: 'NGN', symbol: '₦', name: 'Nigerian Naira' },
-  { code: 'INR', symbol: '₹', name: 'Indian Rupee' }
-]
 function selectCurrency(code) {
   prefs.value.currency = code
   savePreferences();
@@ -61,6 +59,9 @@ const handleSave = async (modal) => {
 
 const savePreferences = async()=> {
   await auth.preferenceChange(prefs.value)
+  // setTimeout(() => {
+  //   window.location.reload();
+  // }, 2000)
 }
 
 </script>
@@ -166,6 +167,9 @@ const savePreferences = async()=> {
             <span class="setting-label">Push Notifications</span>
           </div>
           <div class="toggle-wrap" @click="()=>{
+            if(prefs.push_notification == false){
+              registerForNotifications();
+            }
             prefs.push_notification = !prefs.push_notification
             savePreferences();
           }">
@@ -184,18 +188,18 @@ const savePreferences = async()=> {
             <div class="toggle" :class="{ on: prefs.reminder_alert }"><div class="toggle-knob"></div></div>
           </div>
         </div>
-        <div class="setting-row">
-          <div class="setting-left">
-            <div class="setting-icon" style="background:#f3e8ff">🎯</div>
-            <span class="setting-label">Goal Deadline Alerts</span>
-          </div>
-          <div class="toggle-wrap" @click="()=>{
-            prefs.goal_deadline_alert = !prefs.goal_deadline_alert
-            savePreferences();
-          }">
-            <div class="toggle" :class="{ on: prefs.goal_deadline_alert }"><div class="toggle-knob"></div></div>
-          </div>
-        </div>
+<!--        <div class="setting-row">-->
+<!--          <div class="setting-left">-->
+<!--            <div class="setting-icon" style="background:#f3e8ff">🎯</div>-->
+<!--            <span class="setting-label">Goal Deadline Alerts</span>-->
+<!--          </div>-->
+<!--          <div class="toggle-wrap" @click="()=>{-->
+<!--            prefs.goal_deadline_alert = !prefs.goal_deadline_alert-->
+<!--            savePreferences();-->
+<!--          }">-->
+<!--            <div class="toggle" :class="{ on: prefs.goal_deadline_alert }"><div class="toggle-knob"></div></div>-->
+<!--          </div>-->
+<!--        </div>-->
       </div>
 
       <!-- ── About ──────────────────────────────────────────── -->
